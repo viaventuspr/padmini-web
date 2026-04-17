@@ -1,0 +1,35 @@
+# --- Android Specific ---
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# --- Web Specific (padmini-web) ---
+node_modules/
+padmini-web/dist/
+padmini-web/dist-ssr/
+padmini-web/*.local
+
+# --- Environment & Secrets (CRITICAL) ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+padmini-web/.env
+
+# --- OS Files ---
+Thumbs.db
+db.json
+*.log

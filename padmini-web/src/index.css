@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700;900&family=Baloo+2:wght@400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sinhala bg-brand-cream text-slate-800 antialiased overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand-green hover:bg-brand-green-dark text-white font-bold py-3 px-6 rounded-2xl shadow-lg transform transition active:scale-95;
+  }
+
+  .card {
+    @apply bg-white rounded-[2rem] shadow-xl border-2 border-slate-100 overflow-hidden;
+  }
+
+  .nav-item {
+    @apply flex flex-col items-center justify-center py-2 px-1 transition-all duration-300 relative;
+  }
+
+  .nav-item.active {
+    @apply text-brand-green-dark;
+  }
+
+  .nav-item.active::after {
+    content: '';
+    @apply absolute bottom-0 w-1.5 h-1.5 bg-brand-green rounded-full;
+  }
+}
+
+/* Animations */
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cloud {
+  @apply fixed pointer-events-none opacity-50 z-[-1] text-4xl;
+}
