@@ -1,14 +1,13 @@
 {
   "name": "padmini-web",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -21,7 +20,7 @@
     "firebase": "^10.8.1",
     "swiper": "^11.0.7",
     "canvas-confetti": "^1.9.2",
-    "@google/generative-ai": "^0.11.0",
+    "@google/generative-ai": "^0.21.0",
     "pdfjs-dist": "^4.0.379",
     "lottie-react": "^2.4.0"
   },

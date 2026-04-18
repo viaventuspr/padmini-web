@@ -1,48 +1,52 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+// අලුත්ම SDK අනුවාදය සමඟ සම්බන්ධතාවය තහවුරු කිරීම
 const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 
-// පද්මිනී AI - ලොව නවීනතම Gemini 2.0 Flash තාක්ෂණය භාවිතා කරයි
-const SYSTEM_PROMPT = `As Padmini Teacher (Sri Lankan Primary), generate 5 MCQs from text in Sinhala JSON. Output ONLY JSON.
+const SYSTEM_PROMPT = `As Padmini Teacher (Sri Lankan Primary), generate 5 MCQs from text in Sinhala JSON. Output ONLY JSON array.
 Structure: [{"q": "text", "opts": ["A", "B", "C", "D"], "ans": index, "explain": "short", "emoji": "one", "topic": "name"}]`;
 
 const AiService = {
   generateQuestionsFromText: async (lessonText) => {
-    if (!genAI) throw new Error("Gemini API Key missing.");
+    if (!genAI) throw new Error("Gemini API Key එක සොයාගත නොහැක.");
 
-    try {
-      // ලොව වේගවත්ම සහ නවීනතම Gemini 1.5 Flash භාවිතා කරයි (දැනට පවතින ස්ථාවරම සංස්කරණය)
-      // 2.0 සඳහා "gemini-2.0-flash-exp" භාවිතා කළ හැකි නමුත් එය තවමත් පර්යේෂණාත්මක මට්ටමේ පවතී.
-      const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-      });
+    // උත්සාහ කළ යුතු මාදිලි (Stable Models Only)
+    const modelNames = ["gemini-1.5-flash", "gemini-1.5-pro"];
+    let lastError = null;
 
-      const result = await model.generateContent(`${SYSTEM_PROMPT}\n\nText: ${lessonText.substring(0, 4000)}`);
-      const response = await result.response;
-      const text = response.text();
+    for (const name of modelNames) {
+      try {
+        console.log(`🤖 AI සම්බන්ධ වෙමින්: ${name}...`);
+        const model = genAI.getGenerativeModel({ model: name });
 
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        const result = await model.generateContent({
+          contents: [{ role: "user", parts: [{ text: `${SYSTEM_PROMPT}\n\nText: ${lessonText.substring(0, 4000)}` }] }],
+          generationConfig: { temperature: 0.4, topP: 0.8, topK: 40 }
+        });
+
+        const text = result.response.text();
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+
+        if (jsonMatch) {
+          console.log(`✅ සාර්ථකයි! භාවිතා කළේ: ${name}`);
+          return JSON.parse(jsonMatch[0]);
+        }
+      } catch (error) {
+        console.warn(`${name} අසාර්ථක විය:`, error.message);
+        lastError = error;
+        continue;
       }
-      return [];
-    } catch (error) {
-      console.error("AI Error:", error);
-      // Fallback: 404 දෝෂයක් ආවොත් ස්වයංක්‍රීයව පවතින වෙනත් model එකක් භාවිතා කරයි
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-      const result = await model.generateContent(`${SYSTEM_PROMPT}\n\nText: ${lessonText.substring(0, 2000)}`);
-      const text = (await result.response).text();
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
     }
+
+    throw new Error(`AI සම්බන්ධතාවය අසාර්ථකයි. (කරුණාකර අන්තර්ජාලය සහ API Key පරීක්ෂා කරන්න). ${lastError?.message}`);
   },
 
   explainToChild: async (question, correctAnswer, studentAnswer = null) => {
     if (!genAI) return "නිවැරදි පිළිතුර තමයි " + correctAnswer;
     try {
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const prompt = `Padmini Teacher, briefly explain in 1 simple Sinhala sentence why "${correctAnswer}" is correct for "${question}". Keep it very kind.`;
+      const prompt = `Padmini Teacher, explain in 1 Sinhala sentence why "${correctAnswer}" is correct for "${question}". Be very kind.`;
       const result = await model.generateContent(prompt);
       return result.response.text();
     } catch (e) {
