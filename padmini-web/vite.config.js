@@ -22,6 +22,10 @@ export default defineConfig({
       }
     })
   ],
+  test: {
+    globals: true,
+    environment: 'happy-dom', // Browser APIs (localStorage, etc.) සක්‍රීය කරයි
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true

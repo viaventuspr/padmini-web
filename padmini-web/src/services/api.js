@@ -6,73 +6,74 @@ import {
   query,
   orderBy,
   onSnapshot,
-  addDoc,
   limit,
-  where,
-  getDocs
+  enableIndexedDbPersistence
 } from "firebase/firestore";
 import { units as staticUnits } from '../data/lessons';
 
-const ApiService = {
-  checkSystemHealth: async () => {
-    return { firebase: !!db, timestamp: new Date().toISOString() };
-  },
+// Offline Persistence (Data එක Phone එකේම Save වෙලා තියෙනවා පස්සේ පාවිච්චි කරන්න)
+try {
+  if (db) {
+    enableIndexedDbPersistence(db).catch((err) => {
+        console.warn("Offline sync disabled:", err.code);
+    });
+  }
+} catch (e) {}
 
-  // සියලුම ඒකක සහ පාඩම් ලබා ගැනීම (Hybrid: Static + Cloud)
+const ApiService = {
+  // 🚀 අති වේගවත් දත්ත ලබා ගැනීම (Instant Load + Background Sync)
   getUnits: (callback) => {
-    if (!db) {
-      callback(staticUnits);
-      return () => {};
-    }
+    // 1. වහාම පවතින Static දත්ත ලබා දෙයි
+    callback(staticUnits);
+
+    if (!db) return () => {};
 
     try {
       const q = query(collection(db, "units"), orderBy("id", "asc"));
+      // 2. Cloud එකෙන් දත්ත එන විට එය පමණක් වෙනස් කරයි
       return onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) return;
+
         const dbUnits = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Static ඒකක සහ Cloud ඒකක එකතු කිරීම
         const allUnits = [...staticUnits];
+
         dbUnits.forEach(dbU => {
             const index = allUnits.findIndex(u => u.id === dbU.id);
             if (index !== -1) allUnits[index] = dbU;
             else allUnits.push(dbU);
         });
+
         callback(allUnits.sort((a, b) => a.id - b.id));
-      }, () => callback(staticUnits));
+      }, (error) => {
+        console.error("Firestore Error:", error);
+      });
     } catch (e) {
-      callback(staticUnits);
       return () => {};
     }
   },
 
-  // ලකුණු පුවරුව ලබා ගැනීම (සජීවීව)
+  // සජීවී ලකුණු පුවරුව (Top 10)
   getLeaderboard: (callback) => {
     if (!db) return () => {};
-    const q = query(collection(db, "users"), orderBy("xp", "desc"), limit(20));
+    const q = query(collection(db, "users"), orderBy("xp", "desc"), limit(10));
     return onSnapshot(q, (snapshot) => {
       const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       callback(users);
     });
   },
 
-  // පරිශීලක ප්‍රගතිය Cloud එකේ සුරැකීම
+  // පසුබිමින් දත්ත සුරැකීම (Background Sync)
   saveUserProgress: async (userId, data) => {
     if (!db || !userId) return;
     try {
-      await setDoc(doc(db, "users", userId), {
+      // මෙය Promise එකක් ලෙස ක්‍රියා කළත් UI එක නතර කරන්නේ නැත
+      setDoc(doc(db, "users", userId), {
         ...data,
         lastUpdated: new Date().toISOString()
       }, { merge: true });
     } catch (e) {
-      console.error("Sync Error:", e);
+      console.warn("Progress sync delayed (Offline)");
     }
-  },
-
-  // අලුත් පාඩමක් Publish කිරීම (Admin සඳහා)
-  publishLesson: async (unitId, lessonData) => {
-    if (!db) return;
-    const unitRef = doc(db, "units", String(unitId));
-    // මෙහිදී ඒකකය ඇතුළේ ඇති පාඩම් ලැයිස්තුවට අලුත් පාඩම එකතු කරයි
-    // සටහන: Firestore 'arrayUnion' භාවිතා කිරීම වඩාත් සුදුසුයි
   }
 };
 
