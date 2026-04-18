@@ -1,8 +1,9 @@
-// පද්මිනී පරම හඬ සේවාව (Hybrid Voice Solution - Optimized for Local Assets)
+// පද්මිනී පරම හඬ සේවාව (Ultimate Production Hybrid Voice - Strom Enhanced)
 
 let currentAudio = null;
 let statusCallback = null;
 let audioQueue = [];
+const audioCache = new Map();
 
 const notifyStatus = (status) => {
   if (statusCallback) statusCallback(status);
@@ -13,7 +14,24 @@ const VoiceService = {
     statusCallback = callback;
   },
 
-  // ඔබ බාගත කළ ගොනු නාමයන් මෙහි නිවැරදිව සිතියම් කර ඇත (Mapping)
+  // 1. Smart Pre-warming: ඇප් එක පටන් ගන්නා විටම ශබ්ද මතකයට ගනී.
+  preloadAssets: () => {
+    const assets = [
+      "/audio/voice_welcome.mp3",
+      "/audio/voice_start.mp3",
+      "/audio/voice_great.mp3",
+      "/audio/voice_beautiful.mp3",
+      "/audio/voice_wrong.mp3",
+      "/audio/voice_quiz_start.mp3",
+      "/audio/voice_success.mp3"
+    ];
+    assets.forEach(path => {
+      const audio = new Audio(path);
+      audio.preload = "auto";
+      audioCache.set(path, audio);
+    });
+  },
+
   localVoiceMap: {
     "ආයුබෝවන්!": "/audio/voice_welcome.mp3",
     "අපි පාඩම පටන් ගනිමු දරුවෝ. අවධානයෙන් උත්තර දෙන්න.": "/audio/voice_start.mp3",
@@ -26,37 +44,34 @@ const VoiceService = {
     "අමාරු ප්‍රශ්න පුහුණුව පටන් ගනිමු.": "/audio/voice_hard_practice.mp3"
   },
 
-  splitText: (text) => {
-    if (!text) return [];
-    const cleanText = text.replace(/<[^>]*>?/gm, '');
-    const chunks = cleanText.match(/.{1,160}(?:\s|$)|.{1,160}/g) || [cleanText];
-    return chunks.map(c => c.trim()).filter(c => c.length > 0);
-  },
-
   speak: async (text) => {
     if (!text) return;
     VoiceService.stop();
 
-    const cleanText = text.trim();
-
-    // --- පියවර 1: පටිගත කළ දේශීය හඬක් (Local Voice) තිබේදැයි බැලීම ---
+    const cleanText = text.replace(/<[^>]*>?/gm, '').trim();
     const localFile = VoiceService.localVoiceMap[cleanText];
+
+    // --- පියවර 1: දේශීය හඬ (Local File) පරීක්ෂාව (Ultra Fast) ---
     if (localFile) {
       try {
         await VoiceService.playFile(localFile);
         return;
       } catch (e) {
-        console.warn(`Local file ${localFile} missing. Switching to AI...`);
+        console.warn(`Local file ${localFile} failed. Switching to AI...`);
       }
     }
 
-    // --- පියවර 2: AI හඬ භාවිතා කිරීම ---
-    const chunks = VoiceService.splitText(text);
+    // --- පියවර 2: සජීවී AI හඬ (Cloud TTS) ---
+    const chunks = VoiceService.splitText(cleanText);
     audioQueue = chunks;
     if (audioQueue.length > 0) {
       notifyStatus(true);
       VoiceService.playNext();
     }
+  },
+
+  splitText: (text) => {
+    return text.match(/.{1,160}(?:\s|$)|.{1,160}/g) || [text];
   },
 
   playNext: async () => {
@@ -67,61 +82,42 @@ const VoiceService = {
 
     const chunk = audioQueue.shift();
 
-    // Android Native Bridge Check
-    if (window.AndroidBridge && typeof window.AndroidBridge.speak === 'function') {
-      try {
-        window.AndroidBridge.speak(chunk);
-        const estimatedTime = chunk.length * 85;
-        setTimeout(() => VoiceService.playNext(), estimatedTime);
-        return;
-      } catch (e) {}
+    // Android Bridge Support
+    if (window.AndroidBridge?.speak) {
+      window.AndroidBridge.speak(chunk);
+      setTimeout(() => VoiceService.playNext(), chunk.length * 85);
+      return;
     }
 
-    // Cloud TTS with fallback
     try {
       await VoiceService.playCloudTTS(chunk);
       setTimeout(() => VoiceService.playNext(), 400);
     } catch (e) {
-      VoiceService.fallbackSpeak(chunk, () => {
-        setTimeout(() => VoiceService.playNext(), 400);
-      });
+      VoiceService.fallbackSpeak(chunk, () => VoiceService.playNext());
     }
   },
 
   playFile: (path) => {
     return new Promise((resolve, reject) => {
-      currentAudio = new Audio(path);
+      const audio = audioCache.get(path) || new Audio(path);
+      currentAudio = audio;
       notifyStatus(true);
-      currentAudio.onended = () => {
-        notifyStatus(false);
-        resolve();
-      };
-      currentAudio.onerror = (e) => {
-        notifyStatus(false);
-        reject(e);
-      };
-      currentAudio.play().catch(reject);
+      audio.onended = () => { notifyStatus(false); resolve(); };
+      audio.onerror = reject;
+      audio.play().catch(reject);
     });
   },
 
   playCloudTTS: (text) => {
     return new Promise((resolve, reject) => {
-      const encodedText = encodeURIComponent(text);
-      const url = `https://translate.google.com.vn/translate_tts?ie=UTF-8&q=${encodedText}&tl=si&client=tw-ob`;
-
-      currentAudio = new Audio();
-      currentAudio.src = url;
-      currentAudio.crossOrigin = "anonymous";
-
-      const playPromise = currentAudio.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          currentAudio.onended = resolve;
-        }).catch(reject);
-      } else {
-        currentAudio.onended = resolve;
-      }
-      currentAudio.onerror = reject;
+      const url = `https://translate.google.com.vn/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=si&client=tw-ob`;
+      const audio = new Audio(url);
+      currentAudio = audio;
+      audio.crossOrigin = "anonymous";
+      notifyStatus(true);
+      audio.onended = resolve;
+      audio.onerror = reject;
+      audio.play().catch(reject);
     });
   },
 
@@ -129,7 +125,7 @@ const VoiceService = {
     audioQueue = [];
     if (currentAudio) {
       currentAudio.pause();
-      currentAudio.src = "";
+      currentAudio.currentTime = 0;
       currentAudio = null;
     }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
@@ -137,17 +133,13 @@ const VoiceService = {
   },
 
   fallbackSpeak: (text, onEnd) => {
-    if (!window.speechSynthesis) {
-      if (onEnd) onEnd();
-      return;
-    }
+    if (!window.speechSynthesis) return onEnd?.();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'si-LK';
-    utterance.rate = 0.9;
     utterance.onend = onEnd;
-    utterance.onerror = onEnd;
     window.speechSynthesis.speak(utterance);
   }
 };
 
+VoiceService.preloadAssets();
 export default VoiceService;

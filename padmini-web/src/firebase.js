@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Vite හි environment variables කියවනු ලබන්නේ import.meta.env මගිනි.
+// පද්මිනී ආරක්ෂිත සම්බන්ධතාවය
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -12,9 +12,21 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-const app = initializeApp(firebaseConfig);
+// --- නිෂ්පාදන මට්ටමේ (Production) ආරක්ෂණ පියවර ---
+let app;
+try {
+    if (!firebaseConfig.apiKey) {
+        throw new Error("Firebase Keys missing! Cloudflare Settings පරීක්ෂා කරන්න.");
+    }
+    app = initializeApp(firebaseConfig);
+} catch (error) {
+    console.error("Firebase Initialization Error:", error.message);
+    // ව්‍යාජ app එකක් ලබා දෙයි (Crash වීම වැළැක්වීමට)
+    app = { options: {} };
+}
+
 export const auth = getAuth(app);
-export const db = getFirestore(app); // Firestore initialization එකතු කළා
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export { RecaptchaVerifier, signInWithPhoneNumber };
