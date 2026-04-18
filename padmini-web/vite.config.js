@@ -19,23 +19,11 @@ export default defineConfig({
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' }
         ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,mp3}'],
-        // දෝෂ මඟහරවා ගැනීම සඳහා POST requests සහ API calls cache කිරීමෙන් ඉවත් කරයි
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts' }
-          },
-          {
-            urlPattern: ({ url, request }) => request.method === 'GET' && url.href.includes('translate_tts'),
-            handler: 'NetworkFirst',
-            options: { cacheName: 'voice-cache' }
-          }
-        ]
       }
     })
   ],
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true
+  }
 })
