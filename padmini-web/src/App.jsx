@@ -110,7 +110,26 @@ const App = () => {
 
   useEffect(() => {
     if (userId && userName) {
-      ApiService.saveUserProgress(userId, { userName, xp, level, streak, gems, completedLessonIds, isAdmin, fcmToken });
+      // fcmToken undefined නම් Firebase crash වේ, ඒ නිසා null හෝ delete දමයි.
+      const syncData = { userName, xp, level, streak, gems, completedLessonIds, isAdmin, fcmToken: fcmToken || null };
+      ApiService.saveUserProgress(userId, syncData);
+      
+      // පැරණි පරිශීලකයින් සඳහා ස්වයංක්‍රීයව Push Notification අවසරය විමසීම
+      if (!fcmToken && 'Notification' in window && Notification.permission !== 'denied') {
+         import('./firebase').then(({ messaging }) => {
+            if (messaging) {
+               Notification.requestPermission().then(permission => {
+                  if (permission === 'granted') {
+                     import('firebase/messaging').then(({ getToken }) => {
+                        getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY })
+                          .then(token => usePadminiStore.setState({ fcmToken: token }))
+                          .catch(e => console.warn("Push token fetch failed:", e));
+                     });
+                  }
+               });
+            }
+         });
+      }
     }
   }, [xp, level, streak, gems, userId, userName, completedLessonIds, isAdmin, fcmToken]);
 

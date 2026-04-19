@@ -16,6 +16,7 @@ const AdminDashboard = ({ onBack }) => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorInfo, setErrorInfo] = useState("");
+  const [generatedQuestions, setGeneratedQuestions] = useState([]);
   const [lessonTitle, setLessonTitle] = useState("");
   const [selectedUnit, setSelectedUnit] = useState(1);
   const [editingIdx, setEditingIdx] = useState(null);

@@ -58,17 +58,27 @@ export const usePadminiStore = create(
           console.error("Secure role verification failed:", e);
         }
 
-        // --- Push Notification (FCM Token) Setup ---
+        // --- Safety Wrapped Push Notification Setup ---
         let fcmToken = null;
         try {
-           if (messaging) {
-              const permission = await Notification.requestPermission();
+           // බ්‍රව්සරය Notification වලට සපෝට් කරයිදැයි බලයි
+           if (typeof window !== 'undefined' && 'Notification' in window && messaging) {
+              const permission = Notification.permission === 'default' 
+                ? await Notification.requestPermission() 
+                : Notification.permission;
+                
               if (permission === 'granted') {
-                 // Get token using VAPID key
-                 fcmToken = await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY });
+                 const vKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+                 if (vKey) {
+                    fcmToken = await getToken(messaging, { vapidKey: vKey });
+                 } else {
+                    console.warn("VITE_FIREBASE_VAPID_KEY missing in Env.");
+                 }
               }
            }
-        } catch(e) { console.warn("Push Notifications අවහිර වී ඇත හෝ අවසර නැත:", e); }
+        } catch(e) { 
+           console.error("Notification Setup Error (Bypassing to prevent crash):", e); 
+        }
 
         set({
             userId: user.uid,
