@@ -28,10 +28,11 @@ const LoginScreen = ({ onDone }) => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      setAuthUser(result.user);
+      await setAuthUser(result.user);
 
       if (usePadminiStore.getState().isAdmin) {
           onDone(); // Admin නම් කෙලින්ම ඇතුළු වේ
+
       } else {
           setName(result.user.displayName || '');
           setStep(2); // ශ්‍රේණිය තේරීමට යයි
@@ -67,8 +68,13 @@ const LoginScreen = ({ onDone }) => {
     setLoading(true);
     try {
       const result = await confirmationResult.confirm(otp);
-      setAuthUser(result.user);
-      setStep(1); // නම ඇතුළත් කිරීමට යයි
+      await setAuthUser(result.user);
+      
+      if (usePadminiStore.getState().isAdmin) {
+          onDone();
+      } else {
+          setStep(1); // නම ඇතුළත් කිරීමට යයි
+      }
     } catch (error) {
       alert("OTP අංකය වැරදියි.");
     } finally {

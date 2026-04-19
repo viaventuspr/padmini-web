@@ -26,6 +26,11 @@ const QuizScreen = ({ questions = [], themeTitle, isHardPractice, onFinish, onCl
     VoiceService.onStatusChange(setIsSpeaking);
     // ආරම්භයේදී දරුවා දිරිමත් කිරීම
     VoiceService.speak("අපි පාඩම පටන් ගනිමු දරුවෝ. අවධානයෙන් උත්තර දෙන්න.");
+
+    return () => {
+      VoiceService.onStatusChange(null);
+      VoiceService.stop();
+    };
   }, []);
 
   const q = questions[idx] || {};

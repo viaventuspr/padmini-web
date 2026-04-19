@@ -13,7 +13,9 @@ const Leaderboard = ({ onBack }) => {
     const unsubscribe = ApiService.getLeaderboard((data) => {
       setLeaders(data);
     });
-    return () => unsubscribe();
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, []);
 
   return (

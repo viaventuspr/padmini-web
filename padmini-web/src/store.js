@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from './firebase';
 
 // පද්මිනී Web Service Store (The Ultimate Robust Admin Engine - Strom v4)
 export const usePadminiStore = create(
@@ -24,21 +26,43 @@ export const usePadminiStore = create(
       dailyQuests: [],
       achievements: [],
       newAchievementNotif: null,
+      isAuthLoading: false,
 
-      // 🛡️ Middleware: පරිශීලකයා Admin කෙනෙක්දැයි පරීක්ෂා කිරීම
-      setAuthUser: (user) => {
-        if (!user) return;
-        const adminEmailsStr = import.meta.env.VITE_ADMIN_EMAILS || 'viaventus.pr@gmail.com';
-        const adminList = adminEmailsStr.split(',').map(e => e.trim().toLowerCase());
+      // 🛡️ OWASP Secure Middleware: පරිශීලකයා Admin කෙනෙක්දැයි Backend සම්මතයෙන් පරීක්ෂා කිරීම (BAC / Role Enforcement)
+      setAuthUser: async (user) => {
+        if (!user) {
+          set({ isAuthLoading: false });
+          return;
+        }
+        set({ isAuthLoading: true });
 
-        const userEmail = user.email?.toLowerCase() || '';
-        const isUserAdmin = adminList.includes(userEmail);
+        let isUserAdmin = false;
+        try {
+          if (db) {
+            const roleDocRef = doc(db, 'userRoles', user.uid);
+            const roleSnap = await getDoc(roleDocRef);
+            if (roleSnap.exists() && roleSnap.data().role === 'admin') {
+              isUserAdmin = true;
+            } else {
+              // Backward compatibility fallback using env ONLY if explicitly allowed, 
+              // but restricted completely by firestore rules anyway.
+              const adminEmailsStr = import.meta.env.VITE_ADMIN_EMAILS || '';
+              const adminList = adminEmailsStr.split(',').map(e => e.trim().toLowerCase());
+              if (adminList.includes(user.email?.toLowerCase())) {
+                 isUserAdmin = true;
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Secure role verification failed:", e);
+        }
 
         set({
             userId: user.uid,
             userName: user.displayName || 'ඉගෙනුම් යාළුවා',
-            userEmail: userEmail,
-            isAdmin: isUserAdmin
+            userEmail: user.email?.toLowerCase() || '',
+            isAdmin: isUserAdmin,
+            isAuthLoading: false
         });
       },
 

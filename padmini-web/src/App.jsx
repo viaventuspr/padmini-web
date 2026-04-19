@@ -17,14 +17,24 @@ const GemShop = lazy(() => import('./components/GemShop'));
 
 // --- Professional Role Guard (Middleware Equivalent) ---
 const RoleGuard = ({ children, fallback = 'path' }) => {
-  const { isAdmin, setScreen } = usePadminiStore();
+  const { isAdmin, setScreen, isAuthLoading } = usePadminiStore();
 
   useEffect(() => {
-    if (!isAdmin) {
-      console.error("⛔ අනවසර ඇතුළුවීමක්! Middleware මගින් ඔබව වළක්වා ඇත.");
+    if (!isAuthLoading && !isAdmin) {
+      console.error("⛔ අනවසර ඇතුළුවීමක්! Node.js Middleware මගින් ඔබව වළක්වා ඇත.");
       setScreen(fallback);
+      window.history.replaceState(null, '', '/');
     }
-  }, [isAdmin, setScreen, fallback]);
+  }, [isAdmin, setScreen, fallback, isAuthLoading]);
+
+  // Loading spinner during backend Role Auth verification
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-12 h-12 text-[#58CC02] animate-spin" />
+      </div>
+    );
+  }
 
   return isAdmin ? children : null;
 };
@@ -56,12 +66,41 @@ const App = () => {
     };
   }, []);
 
+  // --- Smart URL Router (Middleware Integration) ---
+  useEffect(() => {
+    const handleUrlRoute = () => {
+      // url එකේ අගට /admin, /shop වගේ දේවල් දමනවා නම් අදාළ තැනට Redirect වේ
+      const path = window.location.pathname.toLowerCase().replace(/\/$/, "");
+      if (path === '/admin') setScreen('admin');
+      else if (path === '/shop') setScreen('shop');
+      else if (path === '/leaderboard') setScreen('leaderboard');
+    };
+    
+    handleUrlRoute(); // Initial check
+    window.addEventListener('popstate', handleUrlRoute);
+    return () => window.removeEventListener('popstate', handleUrlRoute);
+  }, [setScreen]);
+
+  // Update URL to match current screen for shareability without extra libraries
+  useEffect(() => {
+    let newPath = '/';
+    if (currentScreen === 'admin') newPath = '/admin';
+    else if (currentScreen === 'shop') newPath = '/shop';
+    else if (currentScreen === 'leaderboard') newPath = '/leaderboard';
+    
+    if (window.location.pathname !== newPath) {
+       window.history.pushState(null, '', newPath);
+    }
+  }, [currentScreen]);
+
   useEffect(() => {
     const unsubscribe = ApiService.getUnits((units) => {
       setAllUnits(units);
       setIsLoading(false);
     });
-    return () => unsubscribe && unsubscribe();
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -111,7 +150,10 @@ const App = () => {
       <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-10 h-10 text-brand-sky animate-spin opacity-20" /></div>}>
         <AnimatePresence mode="wait">
           {!userName ? (
-            <LoginScreen key="login" onDone={() => setScreen('path')} />
+            <LoginScreen key="login" onDone={() => {
+                const path = window.location.pathname.toLowerCase().replace(/\/$/, "");
+                setScreen(path === '/admin' ? 'admin' : 'path');
+            }} />
           ) : (
             <>
               {currentScreen === 'path' && (

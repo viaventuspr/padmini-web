@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. පරිශීලක දත්ත (User Progress Data) - සමස්ත දරුවන්ට තම තමන්ගේ ප්‍රගතිය පමණක් යාවත්කාලීන කළ හැක
+    match /users/{userId} {
+      allow read: if request.auth != null; // Leaderboard එකට අන් අයගේ ලකුණු බැලීමට අවශ්‍ය නිසා
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 2. පාඩම් සහ ඒකක (Units & Themes) - ළමයින්ට කියවිය හැක. අලුත් පාඩම් දැමිය හැක්කේ ලියාපදිංචි Admin ගුරුවරුන්ට පමණි.
+    match /units/{unitId} {
+      allow read: if true; // පාඩම් ඕනෑම කෙනෙකුට පෙනිය යුතුය
+      allow write: if request.auth != null && get(/databases/$(database)/documents/userRoles/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // 3. Admin භූමිකාව සුරක්ෂිත කිරීම (Role Management)
+    match /userRoles/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId; // තමන්ගේ Role එක බැලීමට බැරිය
+      allow write: if false; // Security: මෙය වෙනස් කළ හැක්කේ Firebase Console එකෙන් ප්‍රධානියාට පමණි!
+    }
+  }
+}
