@@ -25,7 +25,15 @@ const ProgressMeter = ({ value, label, color }) => (
 );
 
 const ParentMode = ({ onBack }) => {
-  const { mistakesByTheme, totalStudyTime, userName, xp, completedLessonIds } = usePadminiStore();
+  const store = usePadminiStore();
+  // Safe destructuring with default values
+  const {
+    mistakesByTheme = {},
+    totalStudyTime = 0,
+    userName = "ළමයා",
+    xp = 0,
+    completedLessonIds = []
+  } = store;
 
   const formatTime = (seconds) => {
     const hrs = Math.floor(seconds / 3600);
@@ -33,9 +41,9 @@ const ParentMode = ({ onBack }) => {
     return `${hrs}h ${mins}m`;
   };
 
-  const themesWithMistakes = Object.entries(mistakesByTheme).sort((a, b) => b[1] - a[1]);
-  const totalUnits = 4; // අපි නිර්මාණය කරන මුළු ඒකක ගණන
-  const completedPercentage = Math.round((completedLessonIds.length / 16) * 100);
+  // Safe entries handling to prevent TypeError
+  const themesWithMistakes = mistakesByTheme ? Object.entries(mistakesByTheme).sort((a, b) => b[1] - a[1]) : [];
+  const completedPercentage = Math.round(((completedLessonIds?.length || 0) / 16) * 100);
 
   return (
     <div className="fixed inset-0 bg-[#F8FAFC] z-[100] flex flex-col max-w-md mx-auto overflow-hidden font-sinhala text-slate-800">
@@ -54,7 +62,7 @@ const ParentMode = ({ onBack }) => {
         {/* Welcome Card */}
         <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border-2 border-slate-50 flex items-center gap-5">
             <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl shadow-lg border-4 border-blue-50">
-                {userName.charAt(0)}
+                {userName?.charAt(0) || 'U'}
             </div>
             <div>
                 <h2 className="text-xl font-black">{userName}</h2>
@@ -78,7 +86,7 @@ const ParentMode = ({ onBack }) => {
             </div>
             <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 flex flex-col gap-2">
                 <Target className="text-green-500" size={24} />
-                <p className="text-2xl font-black">{completedLessonIds.length}</p>
+                <p className="text-2xl font-black">{completedLessonIds?.length || 0}</p>
                 <p className="text-[9px] font-black text-slate-400 uppercase">නිමකළ පාඩම්</p>
             </div>
         </div>
@@ -117,7 +125,7 @@ const ParentMode = ({ onBack }) => {
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-[2rem] text-white">
             <p className="text-xs font-bold text-slate-400 uppercase mb-2">පද්මිනී AI උපදෙස</p>
             <p className="text-sm leading-relaxed italic">
-                "{userName} ගේ ලකුණු අනුව ඔහු ස්වභාවධර්මය පිළිබඳ පාඩම් වලට ඉතා දක්ෂයි. එනමුත් {themesWithMistakes[0]?.[0] || 'සමහර පාඩම්'} පිළිබඳව තවදුරටත් පුහුණු කරවීම සුදුසුයි."
+                "{userName} ඉතාමත් හොඳින් ඉගෙන ගනිමින් සිටී. {themesWithMistakes.length > 0 ? `${themesWithMistakes[0][0]} පිළිබඳව තවදුරටත් පුහුණු කරවීම සුදුසුයි.` : 'දිගටම දිරිමත් කරන්න!'}"
             </p>
         </div>
       </main>

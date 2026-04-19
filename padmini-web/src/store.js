@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// පද්මිනී Web Service Store (The Ultimate Robust Admin Engine - Strom v3)
+// පද්මිනී Web Service Store (The Ultimate Robust Admin Engine - Strom v4)
 export const usePadminiStore = create(
   persist(
     (set, get) => ({
@@ -18,11 +18,15 @@ export const usePadminiStore = create(
       level: 1,
       streak: 0,
       completedLessonIds: [],
+      missedQuestions: {}, // අනිවාර්යයෙන්ම Object එකක් ලෙස ආරම්භ විය යුතුයි
+      mistakesByTheme: {}, // අනිවාර්යයෙන්ම Object එකක් ලෙස ආරම්භ විය යුතුයි
+      dailyQuests: [],
+      achievements: [],
+      newAchievementNotif: null,
 
-      // 🛡️ Middleware Logic: Admin Emails ලැයිස්තුව ආරක්ෂිතව කියවයි
+      // 🛡️ Middleware: පරිශීලකයා Admin කෙනෙක්දැයි පරීක්ෂා කිරීම
       setAuthUser: (user) => {
         if (!user) return;
-
         const adminEmailsStr = import.meta.env.VITE_ADMIN_EMAILS || 'viaventus.pr@gmail.com';
         const adminList = adminEmailsStr.split(',').map(e => e.trim().toLowerCase());
 
@@ -35,8 +39,6 @@ export const usePadminiStore = create(
             userEmail: userEmail,
             isAdmin: isUserAdmin
         });
-
-        console.log(isUserAdmin ? "✅ Admin Access Granted" : "👤 Student Access Granted");
       },
 
       setUserName: (name) => set({ userName: name }),
@@ -64,20 +66,38 @@ export const usePadminiStore = create(
         }));
       },
 
+      trackMistake: (themeTitle, qData) => set((state) => {
+        const currentMistakes = state.mistakesByTheme || {};
+        const currentMissed = state.missedQuestions || {};
+        const count = currentMistakes[themeTitle] || 0;
+
+        return {
+          hearts: Math.max(0, (state.hearts || 5) - 1),
+          mistakesByTheme: { ...currentMistakes, [themeTitle]: count + 1 },
+          missedQuestions: { ...currentMissed, [qData.id || Date.now()]: { data: qData, correctCount: 0 } }
+        };
+      }),
+
+      clearAchievementNotif: () => set({ newAchievementNotif: null }),
+
       resetProgress: () => {
         set({
           userName: '', userEmail: '', isAdmin: false, xp: 0, gems: 50, hearts: 5, level: 1, streak: 0,
-          completedLessonIds: []
+          completedLessonIds: [], missedQuestions: {}, mistakesByTheme: {}, dailyQuests: [], achievements: []
         });
         localStorage.removeItem('padmini-storage');
       }
     }),
     {
         name: 'padmini-storage',
-        // දත්ත කියවීමේදී ඇතිවන දෝෂ වළක්වයි
+        // දත්ත නැවත ලබා ගැනීමේදී ඇතිවන දෝෂ වළක්වන ප්‍රබල ආරක්ෂක වැට
         onRehydrateStorage: () => (state) => {
             if (state) {
                 if (!Array.isArray(state.completedLessonIds)) state.completedLessonIds = [];
+                if (!state.missedQuestions || typeof state.missedQuestions !== 'object') state.missedQuestions = {};
+                if (!state.mistakesByTheme || typeof state.mistakesByTheme !== 'object') state.mistakesByTheme = {};
+                if (!Array.isArray(state.dailyQuests)) state.dailyQuests = [];
+                if (!Array.isArray(state.achievements)) state.achievements = [];
             }
         }
     }
