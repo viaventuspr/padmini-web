@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Medal, Crown, ArrowLeft, Star } from 'lucide-react';
+import { Trophy, Medal, Crown, ArrowLeft, Star, Loader2 } from 'lucide-react';
 import ApiService from '../services/api';
 import { usePadminiStore } from '../store';
 
@@ -9,7 +9,6 @@ const Leaderboard = ({ onBack }) => {
   const { userId } = usePadminiStore();
 
   useEffect(() => {
-    // සජීවීව ලකුණු පුවරුව ලබා ගැනීම
     const unsubscribe = ApiService.getLeaderboard((data) => {
       setLeaders(data);
     });
@@ -17,6 +16,14 @@ const Leaderboard = ({ onBack }) => {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, []);
+
+  const isOnline = (isoString) => {
+    if (!isoString) return false;
+    const diff = new Date() - new Date(isoString);
+    return diff < 15 * 60 * 1000; // 15 mins
+  };
+
+  const activeUsers = leaders.filter(u => isOnline(u.lastActive));
 
   return (
     <div className="fixed inset-0 bg-[#F8FAFC] z-[100] flex flex-col max-w-md mx-auto overflow-hidden font-sinhala">
@@ -28,12 +35,34 @@ const Leaderboard = ({ onBack }) => {
       </header>
 
       <main className="flex-1 p-6 overflow-y-auto space-y-4 pb-32 text-slate-800">
-        <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-8 rounded-[2.5rem] text-white text-center shadow-xl mb-8 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-8 rounded-[2.5rem] text-white text-center shadow-xl mb-4 relative overflow-hidden">
             <Crown size={48} className="mx-auto mb-2 opacity-80 animate-bounce" />
             <h2 className="text-2xl font-black italic">රන් ලීගය (Gold League)</h2>
             <p className="text-xs font-bold opacity-90 uppercase tracking-widest mt-1">පන්තියේ දක්ෂතම සිසුන් 10 දෙනා</p>
             <div className="absolute -right-5 -bottom-5 text-9xl opacity-10">🏆</div>
         </div>
+
+        {/* ── Active Friends Section ── */}
+        {activeUsers.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-2 flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> දැන් ඉගෙන ගන්නා යාළුවෝ
+            </h3>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+              {activeUsers.map(user => (
+                <div key={user.id} className="flex flex-col items-center gap-1 shrink-0">
+                  <div className="relative">
+                    <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border-2 border-slate-100 flex items-center justify-center text-2xl">
+                      {user.avatarEmoji || "🦉"}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500 max-w-[60px] truncate">{user.userName.split(' ')[0]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {leaders.length > 0 ? (
           leaders.map((user, index) => (

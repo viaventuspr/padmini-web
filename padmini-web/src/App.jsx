@@ -40,6 +40,14 @@ const RoleGuard = ({ children, fallback = 'path' }) => {
   return isAdmin ? children : null;
 };
 
+const avatarEmojis = { 
+  owl: '🦉', 
+  lion: '🦁', 
+  butterfly: '🦋', 
+  elephant: '🐘',
+  fairy: <img src="/images/padmini_fairy.png" className="w-full h-full object-contain" alt="Padmini" />
+};
+
 const App = () => {
   const store = usePadminiStore();
   const [isOnline, setIsOnline] = useState(navigator.onLine);

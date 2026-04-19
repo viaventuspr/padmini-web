@@ -15,7 +15,8 @@ export default {
           rose: "#E91E8C",
           purple: "#9B59B6",
           cream: "#FFFEF7",
-        }
+        },
+        "brand-cream": "#FFFEF7",
       },
       fontFamily: {
         sinhala: ['Noto Sans Sinhala', 'sans-serif'],

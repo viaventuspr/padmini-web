@@ -75,6 +75,7 @@ const ApiService = {
     try {
       await setDoc(doc(db, "users", userId), {
         ...data,
+        lastActive: new Date().toISOString(),
         lastUpdated: new Date().toISOString()
       }, { merge: true });
       console.log("✅ ප්‍රගතිය Cloud එක සමඟ Sync වුණා.");

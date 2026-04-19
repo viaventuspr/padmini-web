@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, GraduationCap, Sparkles, ChevronRight, Phone, LogIn } from 'lucide-react';
 import { auth, googleProvider, RecaptchaVerifier, signInWithPhoneNumber } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { usePadminiStore } from '../store';
+import { useEffect } from 'react';
 
 const avatars = [
+  { id: 'fairy', emoji: <img src="/images/padmini_fairy.png" className="w-8 h-8 object-contain" alt="Padmini" />, name: 'සුරංගනාවිය' },
   { id: 'owl', emoji: '🦉', name: 'බකමූණා' },
   { id: 'lion', emoji: '🦁', name: 'සිංහයා' },
   { id: 'butterfly', emoji: '🦋', name: 'සමනලයා' },
@@ -24,23 +26,33 @@ const LoginScreen = ({ onDone }) => {
 
   const { setAuthUser, setGrade: setStoreGrade, setAvatar, setUserName } = usePadminiStore();
 
+  // Redirect ආපසු එන විට දත්ත ලබා ගැනීම
+  useEffect(() => {
+    getRedirectResult(auth).then(async (result) => {
+      if (result?.user) {
+        setLoading(true);
+        await setAuthUser(result.user);
+        if (usePadminiStore.getState().isAdmin) {
+          onDone();
+        } else {
+          setName(result.user.displayName || '');
+          setStep(2);
+        }
+        setLoading(false);
+      }
+    }).catch(error => {
+      console.error("Redirect Auth Error:", error);
+    });
+  }, [auth]);
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      await setAuthUser(result.user);
-
-      if (usePadminiStore.getState().isAdmin) {
-          onDone(); // Admin නම් කෙලින්ම ඇතුළු වේ
-
-      } else {
-          setName(result.user.displayName || '');
-          setStep(2); // ශ්‍රේණිය තේරීමට යයි
-      }
+      // VPN වලදී popup අසාර්ථක විය හැකි නිසා Redirect භාවිතා කරමු
+      await signInWithRedirect(auth, googleProvider);
     } catch (error) {
-      alert("Login අසාර්ථක විය.");
-    } finally {
-      setLoading(false);
+       alert("Login අසාර්ථක විය: " + error.message);
+       setLoading(false);
     }
   };
 
@@ -95,7 +107,9 @@ const LoginScreen = ({ onDone }) => {
       <AnimatePresence mode="wait">
         {step === 0 && (
           <motion.div key="step0" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm text-center space-y-8">
-            <div className="w-32 h-32 bg-[#58CC02] rounded-full flex items-center justify-center text-7xl mx-auto shadow-2xl border-b-8 border-[#46A302] text-white">👩‍🏫</div>
+            <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center text-7xl mx-auto shadow-2xl border-b-8 border-slate-100 overflow-hidden p-2">
+              <img src="/images/padmini_fairy.png" className="w-full h-full object-contain" alt="Padmini" />
+            </div>
             <h1 className="text-3xl font-black text-slate-800">පද්මිනී පන්තියට ලොග් වෙමු</h1>
             <div className="space-y-4">
                 <button onClick={handleGoogleLogin} className="w-full py-4 bg-white border-2 border-b-8 border-slate-100 rounded-2xl flex items-center justify-center gap-3 font-black text-slate-600 hover:bg-slate-50 transition-all">

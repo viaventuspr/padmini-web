@@ -13,7 +13,7 @@ export const usePadminiStore = create(
       userEmail: '',
       isAdmin: false,
       userGrade: 3,
-      avatarId: 'owl',
+      avatarId: 'fairy',
       currentScreen: 'path',
       xp: 0,
       gems: 50,

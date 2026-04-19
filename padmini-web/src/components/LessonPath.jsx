@@ -85,7 +85,13 @@ const LessonPath = ({ onStartLesson, lessons = [] }) => {
     { title: "ඒකකය 4", desc: "අපේ උරුමය", color: "bg-gradient-to-br from-rose-400 to-rose-600" },
   ];
 
-  const avatarEmojis = { owl: '🦉', lion: '🦁', butterfly: '🦋', elephant: '🐘' };
+  const avatarEmojis = { 
+    owl: '🦉', 
+    lion: '🦁', 
+    butterfly: '🦋', 
+    elephant: '🐘',
+    fairy: <img src="/images/padmini_fairy.png" className="w-full h-full object-contain" alt="Padmini" />
+  };
   const margins = ["ml-0", "ml-24", "ml-40", "ml-20", "ml-0", "-ml-20", "-ml-40", "-ml-24"];
 
   return (
