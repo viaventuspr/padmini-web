@@ -146,9 +146,10 @@ export const usePadminiStore = create(
                 if (!Array.isArray(state.completedLessonIds)) state.completedLessonIds = [];
                 if (!state.missedQuestions || typeof state.missedQuestions !== 'object') state.missedQuestions = {};
                 if (!state.mistakesByTheme || typeof state.mistakesByTheme !== 'object') state.mistakesByTheme = {};
-                if (!Array.isArray(state.dailyQuests)) state.dailyQuests = [];
-                if (!Array.isArray(state.achievements)) state.achievements = [];
+                // Force return to home if stuck
+                if (state.currentScreen === 'admin' && !state.isAdmin) state.currentScreen = 'path';
             }
+            return state;
         }
     }
   )

@@ -3,10 +3,9 @@ service firebase.storage {
   match /b/{bucket}/o {
     // Only logged-in admin teachers can upload voice recordings
     match /voices/{allPaths=**} {
-      allow read: if true; // ළමයින්ට කටහඬ ඇසීමට (Read/Download) ඕනෑම කෙනෙකුට හැක
-      // Admin verification via Firestore using custom auth token or firestore rules constraint isn't directly possible in Storage rules without Custom Claims.
-      // Assuming Admin restriction is enforced frontend or by basic Auth requirement:
-      allow write: if request.auth != null; 
+      allow read: if true; 
+      allow write: if request.auth != null && 
+        firestore.get(/databases/(default)/documents/userRoles/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }

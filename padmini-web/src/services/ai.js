@@ -13,7 +13,7 @@ const AiService = {
     try {
       const genAI = new GoogleGenerativeAI(key);
       // Gemini 1.5 Flash භාවිතා කරයි (දැනට පවතින වේගවත්ම සහ නිවැරදිම මාදිලිය)
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
       const SYSTEM_PROMPT = `As Padmini Teacher (Sri Lankan Primary), generate 5 MCQs from text in Sinhala JSON. Output ONLY JSON array.
       Structure: [{"q": "text", "opts": ["A", "B", "C", "D"], "ans": index, "explain": "short", "emoji": "one", "topic": "name"}]`;
@@ -35,7 +35,7 @@ const AiService = {
       console.error("AI Sync Error:", error.message);
       // Fallback logic
       const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const res = await model.generateContent(`${SYSTEM_PROMPT}\n\nText: ${lessonText.substring(0, 2000)}`);
       const match = res.response.text().match(/\[[\s\S]*\]/);
       return match ? JSON.parse(match[0]) : [];
@@ -48,7 +48,7 @@ const AiService = {
 
     try {
       const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const prompt = `Padmini Teacher, explain in 1 simple Sinhala sentence why "${correctAnswer}" is correct for "${question}". Be kind.`;
       const result = await model.generateContent(prompt);
       return result.response.text();

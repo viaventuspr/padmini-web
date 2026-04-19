@@ -19,5 +19,11 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid == userId; // තමන්ගේ Role එක බැලීමට බැරිය
       allow write: if false; // Security: මෙය වෙනස් කළ හැක්කේ Firebase Console එකෙන් ප්‍රධානියාට පමණි!
     }
+
+    // 4. සැකසුම් සහ කටහඬවල් (Voice Maps & Settings)
+    match /settings/{settingId} {
+      allow read: if true; 
+      allow write: if request.auth != null && get(/databases/$(database)/documents/userRoles/$(request.auth.uid)).data.role == 'admin';
+    }
   }
 }

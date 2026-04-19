@@ -18,20 +18,21 @@ const firebaseConfig = {
 let app;
 try {
     if (!firebaseConfig.apiKey) {
-        throw new Error("Firebase Keys missing! Cloudflare Settings පරීක්ෂා කරන්න.");
+        console.warn("Firebase Keys missing! Local storage data only mode enabled.");
+        app = null;
+    } else {
+        app = initializeApp(firebaseConfig);
     }
-    app = initializeApp(firebaseConfig);
 } catch (error) {
     console.error("Firebase Initialization Error:", error.message);
-    // ව්‍යාජ app එකක් ලබා දෙයි (Crash වීම වැළැක්වීමට)
-    app = { options: {} };
+    app = null;
 }
 
 export const firebaseApp = app;
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = app.options ? getStorage(app) : null;
-export const messaging = app.options ? getMessaging(app) : null;
+export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
+export const storage = app ? getStorage(app) : null;
+export const messaging = app ? getMessaging(app) : null;
 export const googleProvider = new GoogleAuthProvider();
 
 export { RecaptchaVerifier, signInWithPhoneNumber };

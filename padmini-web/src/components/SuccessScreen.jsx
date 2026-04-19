@@ -1,24 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { Zap, Clock, Target, Star, Trophy, Gem, Sparkles, ChevronRight } from 'lucide-react';
+import { Zap, Clock, Target, Trophy, Gem, ArrowRight } from 'lucide-react';
 import { usePadminiStore } from '../store';
 
 const SuccessScreen = ({ score, total, timeSpent, onContinue }) => {
   const [chestOpened, setChestOpened] = useState(false);
   const { addGems, xp } = usePadminiStore();
 
-  const accuracy = Math.round((score / total) * 100);
+  const accuracy = total > 0 ? Math.round((score / total) * 100) : 0;
   const xpEarned = score * 10;
   const bonusGems = Math.floor(score / 2) + (score === total ? 10 : 0);
 
   useEffect(() => {
-    // Initial celebration
     confetti({
-      particleCount: 150,
-      spread: 70,
+      particleCount: 120,
+      spread: 80,
       origin: { y: 0.6 },
-      colors: ['#58CC02', '#FFD700', '#1CB0F6']
+      colors: ['#A855F7', '#F59E0B', '#14B8A6', '#7C3AED']
     });
   }, []);
 
@@ -26,112 +25,85 @@ const SuccessScreen = ({ score, total, timeSpent, onContinue }) => {
     if (chestOpened) return;
     setChestOpened(true);
     addGems(bonusGems);
-
-    // Victory celebration
-    const end = Date.now() + 2 * 1000;
+    const end = Date.now() + 2000;
     (function frame() {
-      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 } });
-      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 } });
+      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#A855F7', '#F59E0B'] });
+      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#14B8A6', '#7C3AED'] });
       if (Date.now() < end) requestAnimationFrame(frame);
     }());
   };
 
   return (
-    <div className="fixed inset-0 bg-[#FFFEF7] z-[100] flex flex-col items-center justify-between p-8 text-center max-w-md mx-auto overflow-hidden font-sinhala">
-      <div className="w-full flex-1 flex flex-col items-center justify-center space-y-10">
+    <div className="fixed inset-0 bg-app z-[100] flex flex-col items-center justify-between p-6 text-center max-w-lg mx-auto overflow-hidden font-sinhala">
+      {/* Ambient */}
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] orb-purple rounded-full"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] orb-gold rounded-full"></div>
 
-        {/* Magic Chest or Trophy */}
+      <div className="w-full flex-1 flex flex-col items-center justify-center space-y-8 relative z-10">
+        {/* Chest / Trophy */}
         <div className="relative cursor-pointer" onClick={handleOpenChest}>
           <AnimatePresence mode="wait">
             {!chestOpened ? (
-              <motion.div
-                key="closed"
-                initial={{ scale: 0.8 }}
-                animate={{
-                  y: [0, -15, 0],
-                  rotate: [0, -3, 3, 0],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="relative"
-              >
-                <div className="absolute inset-0 bg-yellow-400/30 blur-3xl rounded-full scale-150 animate-pulse"></div>
-                <div className="text-9xl filter drop-shadow-2xl">🎁</div>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="absolute -top-6 -right-6 bg-rose-500 text-white text-[10px] font-black px-4 py-2 rounded-full shadow-xl border-4 border-white uppercase tracking-tighter"
-                >
+              <motion.div key="closed" animate={{ y: [0, -12, 0], rotate: [0, -2, 2, 0] }}
+                transition={{ repeat: Infinity, duration: 2 }} className="relative">
+                <div className="absolute inset-0 bg-gold-400/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
+                <div className="text-8xl filter drop-shadow-2xl">🎁</div>
+                <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1 }}
+                  className="absolute -top-4 -right-4 bg-gradient-to-r from-lotus-600 to-lotus-500 text-white text-[9px] font-extrabold px-3 py-1.5 rounded-full shadow-lg">
                   එබන්න!
                 </motion.div>
               </motion.div>
             ) : (
-              <motion.div
-                key="opened"
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="flex flex-col items-center"
-              >
-                <Trophy size={140} className="text-yellow-400 drop-shadow-2xl mb-4" />
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: -40, opacity: 1 }}
-                  className="flex items-center gap-2 text-4xl font-black text-brand-sky"
-                >
-                  <Gem fill="currentColor" size={32} /> +{bonusGems}
+              <motion.div key="opened" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                className="flex flex-col items-center">
+                <Trophy size={100} className="text-gold-400 drop-shadow-2xl mb-2" />
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: -20, opacity: 1 }}
+                  className="flex items-center gap-2 text-3xl font-black text-lotus-600">
+                  <Gem className="fill-lotus-400" size={24} /> +{bonusGems}
                 </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        <div className="space-y-2">
-            <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-4xl font-black text-[#58CC02] uppercase tracking-tight"
-            >
-                {score === total ? 'විශිෂ්ටයි!' : 'නියමයි!'}
-            </motion.h1>
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">පාඩම සාර්ථකව අවසන් කළා</p>
+        {/* Title */}
+        <div>
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="text-3xl font-black text-gradient uppercase tracking-tight">
+            {score === total ? 'විශිෂ්ටයි!' : 'නියමයි!'}
+          </motion.h1>
+          <p className="text-lotus-400 font-semibold text-xs mt-1">පාඩම සාර්ථකව අවසන් කළා</p>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 w-full">
           {[
-            { label: "XP ලකුණු", val: xpEarned, ico: Zap, color: "text-yellow-600", bg: "bg-yellow-100" },
-            { label: "ගතවූ කාලය", val: timeSpent, ico: Clock, color: "text-blue-600", bg: "bg-blue-100" },
-            { label: "නිරවද්‍යතාවය", val: `${accuracy}%`, ico: Target, color: "text-green-600", bg: "bg-green-100" }
+            { label: 'XP ලකුණු', val: xpEarned, ico: Zap, gradient: 'from-gold-100 to-gold-50', color: 'text-gold-600' },
+            { label: 'ගත වූ කාලය', val: timeSpent, ico: Clock, gradient: 'from-lotus-100 to-lotus-50', color: 'text-lotus-600' },
+            { label: 'නිරවද්‍යතාවය', val: `${accuracy}%`, ico: Target, gradient: 'from-ocean-100 to-ocean-50', color: 'text-ocean-600' },
           ].map((s, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 + (i * 0.1) }}
-              className="bg-white border-2 border-b-8 border-slate-100 p-4 rounded-[2rem] shadow-sm flex flex-col items-center gap-2"
-            >
-              <div className={`w-10 h-10 ${s.bg} rounded-2xl flex items-center justify-center ${s.color}`}>
-                <s.ico fill={i === 0 ? "currentColor" : "none"} size={20} strokeWidth={3} />
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 + i * 0.1 }}
+              className={`bg-gradient-to-b ${s.gradient} p-4 rounded-3xl flex flex-col items-center gap-2 border border-white/50`}>
+              <div className={`w-10 h-10 bg-white rounded-xl flex items-center justify-center ${s.color} shadow-sm`}>
+                <s.ico size={18} strokeWidth={2.5} />
               </div>
-              <span className="text-lg font-black text-slate-700">{s.val}</span>
-              <p className="text-[7px] font-black text-slate-400 uppercase tracking-tighter">{s.label}</p>
+              <span className="text-lg font-black text-lotus-950">{s.val}</span>
+              <p className="text-[8px] font-bold text-lotus-400 uppercase tracking-wider">{s.label}</p>
             </motion.div>
           ))}
         </div>
       </div>
 
-      <footer className="w-full space-y-6 pt-10">
-        <p className="text-slate-500 font-bold italic text-sm px-6">
-          "{score === total ? 'ඔයා අද ඔක්කොම ප්‍රශ්න හරියටම කළා! මාරයි!' : 'ඔයා අද ගොඩක් දේවල් ඉගෙන ගත්තා. ගුරුතුමියට සතුටුයි!'}"
+      {/* Footer */}
+      <footer className="w-full space-y-4 pt-6 relative z-10">
+        <p className="text-lotus-400 font-semibold italic text-sm px-4">
+          "{score === total ? 'ඔයා අද සියලුම ප්‍රශ්න හරියටම කළා!' : 'ඔයා අද ගොඩක් දේවල් ඉගෙන ගත්තා. ගුරුතුමියට සතුටුයි!'}"
         </p>
-
-        <button
-          onClick={onContinue}
-          disabled={!chestOpened}
-          className={`w-full py-5 rounded-2xl text-2xl font-black text-white shadow-2xl active:translate-y-2 active:border-b-0 transition-all uppercase tracking-widest border-b-8
-            ${chestOpened ? 'bg-[#1CB0F6] border-[#1899D6] hover:brightness-110' : 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed'}`}
-        >
-          {chestOpened ? 'ඉදිරියට යමු' : 'තෑග්ග ලබා ගන්න'}
+        <button onClick={onContinue} disabled={!chestOpened}
+          className={`w-full py-4 rounded-2xl text-lg font-bold transition-all flex items-center justify-center gap-2
+            ${chestOpened ? 'btn-action' : 'bg-lotus-100 text-lotus-300 cursor-not-allowed'}`}>
+          {chestOpened ? <>ඉදිරියට යමු <ArrowRight size={20} /></> : 'තෑග්ග ලබා ගන්න 🎁'}
         </button>
       </footer>
     </div>

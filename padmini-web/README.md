@@ -17,6 +17,6 @@
 ## 🚀 සජීවී තත්ත්වය
 - **Hosting:** Cloudflare Pages ✅
 - **Database:** Firebase Firestore ✅
-- **Production URL:** [https://padmini-class.pages.dev](https://padmini-class.pages.dev)
+- **Production URL:** [https://padmini-web.pages.dev](https://padmini-web.pages.dev)
 
 **නිර්මාණය:** පද්මිනී පන්තිය තාක්ෂණික කණ්ඩායම 🚀🌸
