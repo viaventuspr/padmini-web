@@ -6,6 +6,7 @@ import QuizScreen from './components/QuizScreen';
 import SuccessScreen from './components/SuccessScreen';
 import ApiService from './services/api';
 import VoiceService from './services/voice';
+import { VoiceManager } from './services/VoiceManager';
 import { Loader2, Settings, Trophy, ListChecks, ShoppingBag, Layout, WifiOff, AlertCircle, ShieldCheck } from 'lucide-react';
 
 // Lazy loading for Dashboard parts (Better Performance)
@@ -78,6 +79,10 @@ const App = () => {
     
     handleUrlRoute(); // Initial check
     window.addEventListener('popstate', handleUrlRoute);
+
+    // ලෝඩ් වන විට ගුරුවරියගේ කටහඬවල් Download කර ඇප් එකේ AI Voice වෙනුවට ආදේශ කිරීම
+    VoiceManager.loadCustomVoices();
+
     return () => window.removeEventListener('popstate', handleUrlRoute);
   }, [setScreen]);
 

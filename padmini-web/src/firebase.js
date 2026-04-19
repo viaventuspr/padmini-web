@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // පද්මිනී ආරක්ෂිත සම්බන්ධතාවය
 const firebaseConfig = {
@@ -27,6 +28,7 @@ try {
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = app.options ? getStorage(app) : null;
 export const googleProvider = new GoogleAuthProvider();
 
 export { RecaptchaVerifier, signInWithPhoneNumber };
