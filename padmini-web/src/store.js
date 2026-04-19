@@ -15,6 +15,7 @@ export const usePadminiStore = create(
       userGrade: 3,
       avatarId: 'fairy',
       lastSyncTime: 0,
+      lastHeartRefill: Date.now(),
       currentScreen: 'path',
       xp: 0,
       gems: 50,
@@ -125,8 +126,48 @@ export const usePadminiStore = create(
         }
       },
 
+      // 💖 Smart Heart Regeneration Logic (Auto-recover every 10 mins)
+      recoverHearts: () => {
+        const { hearts, lastHeartRefill } = get();
+        if (hearts >= 5) return;
+
+        const now = Date.now();
+        const tenMins = 10 * 60 * 1000;
+        const timePassed = now - (lastHeartRefill || now);
+
+        if (timePassed >= tenMins) {
+          const heartsToAdd = Math.floor(timePassed / tenMins);
+          set((state) => ({
+            hearts: Math.min(5, (state.hearts || 0) + heartsToAdd),
+            lastHeartRefill: now
+          }));
+          get().saveProgressToCloud();
+        }
+      },
+
+      // 🏆 Auto-Grant Achievements Logic
+      checkAchievements: () => {
+        const { completedLessonIds, streak, achievements } = get();
+        const newAwards = Array.isArray(achievements) ? [...achievements] : [];
+        let hasNew = false;
+
+        if (completedLessonIds.length >= 1 && !newAwards.find(a => a.id === 'first_lesson')) {
+            newAwards.push({ id: 'first_lesson', title: 'පළමු පියවර', desc: 'පළමු පාඩම අවසන් කළා!', icon: '🌱', earned: true });
+            hasNew = true;
+        }
+        if (streak >= 3 && !newAwards.find(a => a.id === 'streak_master')) {
+            newAwards.push({ id: 'streak_master', title: 'නොනවතින උත්සාහය', desc: 'දින 3ක් එක දිගට ඉගෙන ගත්තා!', icon: '🔥', earned: true });
+            hasNew = true;
+        }
+
+        if (hasNew) {
+            set({ achievements: newAwards, newAchievementNotif: newAwards[newAwards.length - 1] });
+            get().saveProgressToCloud();
+        }
+      },
+
       completeLesson: (score, total, lessonId) => {
-        const { addXP, addGems, saveProgressToCloud } = get();
+        const { addXP, addGems, saveProgressToCloud, checkAchievements } = get();
         addXP(score * 10);
         addGems(5);
         set((state) => ({
@@ -136,7 +177,8 @@ export const usePadminiStore = create(
             : [lessonId],
           currentScreen: 'completion'
         }));
-        // පියවර අවසානයේ ස්වයංක්‍රීයව Cloud එක සමඟ Sync කරයි (Write-Back)
+        
+        checkAchievements();
         saveProgressToCloud();
       },
 
