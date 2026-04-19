@@ -6,7 +6,9 @@ import {
   query,
   orderBy,
   onSnapshot,
-  limit
+  limit,
+  updateDoc,
+  arrayUnion
 } from "firebase/firestore";
 import { units as staticUnits } from '../data/lessons';
 
@@ -31,8 +33,20 @@ const ApiService = {
         const allUnits = [...staticUnits];
 
         dbUnits.forEach(dbU => {
-            const index = allUnits.findIndex(u => u.id === dbU.id);
-            if (index !== -1) allUnits[index] = dbU;
+            const index = allUnits.findIndex(u => String(u.id) === String(dbU.id));
+            if (index !== -1) {
+                // If the static unit already has themes, we merge newly added themes!
+                const existingThemes = allUnits[index].themes || [];
+                const dbThemes = dbU.themes || [];
+                // Merge themes based on ID
+                const mergedThemes = [...existingThemes];
+                dbThemes.forEach(dt => {
+                    const tIndex = mergedThemes.findIndex(et => String(et.id) === String(dt.id));
+                    if (tIndex !== -1) mergedThemes[tIndex] = dt;
+                    else mergedThemes.push(dt);
+                });
+                allUnits[index] = { ...allUnits[index], ...dbU, themes: mergedThemes };
+            }
             else allUnits.push(dbU);
         });
 
@@ -74,12 +88,17 @@ const ApiService = {
     if (!db) return;
     try {
       const unitRef = doc(db, "units", String(unitId));
-      await setDoc(unitRef, {
-        ...lessonData,
+      await updateDoc(unitRef, {
+        themes: arrayUnion(lessonData),
         updatedAt: new Date().toISOString()
-      }, { merge: true });
+      });
       return true;
     } catch (e) {
+      if (e.code === 'not-found') {
+        const adminUnit = { id: unitId, title: "මාර්ගගත පාඩම් (Online)", themes: [lessonData] };
+        await setDoc(doc(db, "units", String(unitId)), { ...adminUnit, updatedAt: new Date().toISOString() });
+        return true;
+      }
       console.error("Publish Error:", e);
       throw e;
     }

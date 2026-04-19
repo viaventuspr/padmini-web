@@ -17,6 +17,7 @@ export const usePadminiStore = create(
       hearts: 5,
       level: 1,
       streak: 0,
+      totalStudyTime: 0,
       completedLessonIds: [],
       missedQuestions: {}, // අනිවාර්යයෙන්ම Object එකක් ලෙස ආරම්භ විය යුතුයි
       mistakesByTheme: {}, // අනිවාර්යයෙන්ම Object එකක් ලෙස ආරම්භ විය යුතුයි
@@ -45,6 +46,7 @@ export const usePadminiStore = create(
       setGrade: (grade) => set({ userGrade: grade }),
       setAvatar: (id) => set({ avatarId: id }),
       setScreen: (screen) => set({ currentScreen: screen }),
+      addStudyTime: (seconds) => set((state) => ({ totalStudyTime: (state.totalStudyTime || 0) + seconds })),
 
       addXP: (amount) => set((state) => {
         const newXP = (state.xp || 0) + amount;
@@ -82,7 +84,7 @@ export const usePadminiStore = create(
 
       resetProgress: () => {
         set({
-          userName: '', userEmail: '', isAdmin: false, xp: 0, gems: 50, hearts: 5, level: 1, streak: 0,
+          userName: '', userEmail: '', isAdmin: false, xp: 0, gems: 50, hearts: 5, level: 1, streak: 0, totalStudyTime: 0,
           completedLessonIds: [], missedQuestions: {}, mistakesByTheme: {}, dailyQuests: [], achievements: []
         });
         localStorage.removeItem('padmini-storage');

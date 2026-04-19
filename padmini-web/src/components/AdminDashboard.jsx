@@ -71,7 +71,11 @@ const AdminDashboard = ({ onBack }) => {
         title: lessonTitle,
         icon: generatedQuestions[0]?.emoji || "📚",
         questions: generatedQuestions,
-        grade: "3-5"
+        grade: "3-5",
+        guidebook: {
+          text: "මෙම පාඩම AI තාක්ෂණය මගින් ස්වයංක්‍රීයව සකසා ඇත.",
+          points: ["AI පාඩම", "නව දැනුම", "ස්වයංක්‍රීය ඇගයීම"]
+        }
       };
       // Firestore වෙත යැවීම
       await ApiService.publishLesson(selectedUnit, lessonData);
