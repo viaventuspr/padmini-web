@@ -78,23 +78,19 @@ const App = () => {
   // --- Smart URL Router (Middleware Integration) ---
   useEffect(() => {
     const handleUrlRoute = () => {
-      // url එකේ අගට /admin, /shop වගේ දේවල් දමනවා නම් අදාළ තැනට Redirect වේ
       const path = window.location.pathname.toLowerCase().replace(/\/$/, "");
       if (path === '/admin') setScreen('admin');
       else if (path === '/shop') setScreen('shop');
       else if (path === '/leaderboard') setScreen('leaderboard');
     };
     
-    handleUrlRoute(); // Initial check
+    handleUrlRoute(); 
     window.addEventListener('popstate', handleUrlRoute);
-
-    // ලෝඩ් වන විට ගුරුවරියගේ කටහඬවල් Download කර ඇප් එකේ AI Voice වෙනුවට ආදේශ කිරීම
     VoiceManager.loadCustomVoices();
 
     return () => window.removeEventListener('popstate', handleUrlRoute);
   }, [setScreen]);
 
-  // Update URL to match current screen for shareability without extra libraries
   useEffect(() => {
     let newPath = '/';
     if (currentScreen === 'admin') newPath = '/admin';
@@ -116,30 +112,34 @@ const App = () => {
     };
   }, []);
 
+  // 🚀 Write-Back Optimization Sync (For 5000+ Users)
   useEffect(() => {
     if (userId && userName) {
-      // fcmToken undefined නම් Firebase crash වේ, ඒ නිසා null හෝ delete දමයි.
-      const syncData = { userName, xp, level, streak, gems, completedLessonIds, isAdmin, fcmToken: fcmToken || null };
-      ApiService.saveUserProgress(userId, syncData);
-      
-      // පැරණි පරිශීලකයින් සඳහා ස්වයංක්‍රීයව Push Notification අවසරය විමසීම
-      if (!fcmToken && 'Notification' in window && Notification.permission !== 'denied') {
-         import('./firebase').then(({ messaging }) => {
-            if (messaging) {
-               Notification.requestPermission().then(permission => {
-                  if (permission === 'granted') {
-                     import('firebase/messaging').then(({ getToken }) => {
-                        getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY })
-                          .then(token => usePadminiStore.setState({ fcmToken: token }))
-                          .catch(e => console.warn("Push token fetch failed:", e));
-                     });
-                  }
-               });
-            }
-         });
-      }
+      const timeoutId = setTimeout(() => {
+        store.saveProgressToCloud();
+      }, 15000); // 15s delay (Write-Back strategy)
+      return () => clearTimeout(timeoutId);
     }
-  }, [xp, level, streak, gems, userId, userName, completedLessonIds, isAdmin, fcmToken]);
+  }, [xp, level, streak, gems, userId, completedLessonIds]);
+
+  // Push Notification Sync (Separate Logic)
+  useEffect(() => {
+    if (userId && !fcmToken && 'Notification' in window && Notification.permission !== 'denied') {
+       import('./firebase').then(({ messaging }) => {
+          if (messaging) {
+             Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                   import('firebase/messaging').then(({ getToken }) => {
+                      getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY })
+                        .then(token => usePadminiStore.setState({ fcmToken: token }))
+                        .catch(e => console.warn("Push token fetch failed:", e));
+                   });
+                }
+             });
+          }
+       });
+    }
+  }, [userId, fcmToken]);
 
   const startLessonSequence = (lessonId) => {
     const allThemes = allUnits.flatMap(u => u.themes);
@@ -147,6 +147,7 @@ const App = () => {
     if (!theme) return;
     setActiveLesson(theme);
     setScreen('guide');
+    setStartTime(Date.now());
   };
 
   const handleQuizFinish = (score, total) => {
@@ -170,7 +171,6 @@ const App = () => {
   return (
     <div className="max-w-md mx-auto min-h-screen bg-[#FFFEF7] font-sinhala relative overflow-hidden text-slate-800 shadow-2xl">
 
-      {/* Network Alert */}
       <AnimatePresence>
         {!isOnline && (
           <motion.div initial={{ y: -50 }} animate={{ y: 0 }} exit={{ y: -50 }} className="fixed top-0 left-0 right-0 z-[1000] bg-rose-500 text-white p-2 text-center text-[10px] font-black uppercase">
@@ -191,17 +191,12 @@ const App = () => {
               {currentScreen === 'path' && (
                 <motion.div key="path" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <LessonPath onStartLesson={startLessonSequence} lessons={allUnits.flatMap(u => u.themes)} />
-
-                  {/* Sidebar Control Center */}
                   <div className="fixed bottom-24 left-6 flex flex-col gap-3 z-40">
                       <button onClick={() => setScreen('shop')} className="w-12 h-12 bg-white border-b-4 border-slate-200 rounded-2xl flex items-center justify-center text-brand-sky shadow-lg hover:scale-110 transition-all"><ShoppingBag size={24} /></button>
                       <button onClick={() => setScreen('leaderboard')} className="w-12 h-12 bg-white border-b-4 border-slate-200 rounded-2xl flex items-center justify-center text-yellow-500 shadow-lg hover:scale-110 transition-all"><Trophy size={24} /></button>
                   </div>
-
                   <div className="fixed bottom-24 right-6 flex flex-col gap-3 z-40">
                       <button onClick={() => setScreen('parent')} className="w-12 h-12 bg-white border-2 border-slate-100 rounded-full flex items-center justify-center text-slate-400 shadow-lg hover:scale-110 transition-all"><Layout size={24} /></button>
-
-                      {/* Admin Only Button - Shield Icon indicating protected area */}
                       {isAdmin && (
                         <button onClick={() => setScreen('admin')} className="w-12 h-12 bg-slate-900 border-2 border-slate-700 rounded-full flex items-center justify-center text-brand-green shadow-lg hover:scale-110 transition-all">
                             <ShieldCheck size={24} />
@@ -217,7 +212,6 @@ const App = () => {
               {currentScreen === 'quiz' && <QuizScreen key="quiz" questions={activeLesson?.questions} themeTitle={activeLesson?.title} onClose={() => setScreen('path')} onFinish={handleQuizFinish} />}
               {currentScreen === 'completion' && <SuccessScreen key="success" score={lastResult.score} total={lastResult.total} timeSpent={timeSpent} onContinue={() => setScreen('path')} />}
 
-              {/* --- Admin Protected Route (Like Next.js Dashboard Layout) --- */}
               {currentScreen === 'admin' && (
                 <RoleGuard>
                   <AdminDashboard onBack={() => setScreen('path')} />

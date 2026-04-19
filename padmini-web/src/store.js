@@ -14,6 +14,7 @@ export const usePadminiStore = create(
       isAdmin: false,
       userGrade: 3,
       avatarId: 'fairy',
+      lastSyncTime: 0,
       currentScreen: 'path',
       xp: 0,
       gems: 50,
@@ -103,8 +104,23 @@ export const usePadminiStore = create(
 
       addGems: (amount) => set((state) => ({ gems: Math.max(0, (state.gems || 0) + amount) })),
 
+      saveProgressToCloud: async () => {
+        const { userId, userName, xp, level, streak, gems, completedLessonIds, isAdmin } = get();
+        if (!userId || !db) return;
+
+        // Write-Back Strategy: දත්ත තොග වශයෙන් Cloud වෙත යැවීම (Batch Sync)
+        const syncData = { userName, xp, level, streak, gems, completedLessonIds, isAdmin };
+        try {
+          const ApiService = (await import('./services/api')).default;
+          await ApiService.saveUserProgress(userId, syncData);
+          set({ lastSyncTime: Date.now() });
+        } catch (e) {
+          console.warn("Write-Back Sync Failed, data remains in local cache.", e);
+        }
+      },
+
       completeLesson: (score, total, lessonId) => {
-        const { addXP, addGems } = get();
+        const { addXP, addGems, saveProgressToCloud } = get();
         addXP(score * 10);
         addGems(5);
         set((state) => ({
@@ -114,6 +130,8 @@ export const usePadminiStore = create(
             : [lessonId],
           currentScreen: 'completion'
         }));
+        // පියවර අවසානයේ ස්වයංක්‍රීයව Cloud එක සමඟ Sync කරයි (Write-Back)
+        saveProgressToCloud();
       },
 
       trackMistake: (themeTitle, qData) => set((state) => {

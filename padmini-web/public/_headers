@@ -1,0 +1,16 @@
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# 🖼️ පින්තූර සහ අයිකන සඳහා ඉහළම වේගය (Cache for 1 year)
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 🔒 ආරක්ෂක පියවර (Security Headers)
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), camera=(), microphone=()
