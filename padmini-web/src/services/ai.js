@@ -10,35 +10,41 @@ const AiService = {
     const key = AiService.getAPIKey();
     if (!key) throw new Error("Security Alert: AI Key එක සොයාගත නොහැක.");
 
+    if (!lessonText || lessonText.trim().length < 10) {
+      throw new Error("PDF එකෙන් ප්‍රමාණවත් අකුරු ප්‍රමාණයක් කියවිය නොහැක. කරුණාකර වෙනත් PDF එකක් උත්සාහ කරන්න.");
+    }
+
     try {
       const genAI = new GoogleGenerativeAI(key);
-      // Gemini 1.5 Flash භාවිතා කරයි (දැනට පවතින වේගවත්ම සහ නිවැරදිම මාදිලිය)
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-      const SYSTEM_PROMPT = `As Padmini Teacher (Sri Lankan Primary), generate 5 MCQs from text in Sinhala JSON. Output ONLY JSON array.
-      Structure: [{"q": "text", "opts": ["A", "B", "C", "D"], "ans": index, "explain": "short", "emoji": "one", "topic": "name"}]`;
-
-      const result = await model.generateContent({
-        contents: [{ role: "user", parts: [{ text: `${SYSTEM_PROMPT}\n\nText: ${lessonText.substring(0, 4000)}` }] }],
-        generationConfig: { temperature: 0.4, topP: 0.8, topK: 40 }
+      // Gemini 2.0 Flash - Using Official JSON Mode
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.0-flash",
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.2
+        }
       });
 
-      const response = await result.response;
-      const text = response.text();
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      const SYSTEM_PROMPT = `As Padmini Teacher (Sri Lankan Primary), generate 5 MCQs from text in Sinhala.
+      JSON Schema required:
+      [{"q": "ප්‍රශ්නය", "opts": ["පිළිතුර 1", "2", "3", "4"], "ans": 0, "explain": "විස්තරය", "emoji": "🌿", "topic": "මාතෘකාව"}]
+      Return ONLY the JSON array.`;
 
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+      const result = await model.generateContent(`${SYSTEM_PROMPT}\n\nText to analyze: ${lessonText.substring(0, 8000)}`);
+      const response = await result.response;
+      const text = response.text().trim();
+      
+      // Attempt to parse directly since we used responseMimeType
+      try {
+        return JSON.parse(text);
+      } catch (innerError) {
+        // Fallback to regex if JSON mode fails for some reason
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
       }
-      return [];
     } catch (error) {
-      console.error("AI Sync Error:", error.message);
-      // Fallback logic
-      const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-      const res = await model.generateContent(`${SYSTEM_PROMPT}\n\nText: ${lessonText.substring(0, 2000)}`);
-      const match = res.response.text().match(/\[[\s\S]*\]/);
-      return match ? JSON.parse(match[0]) : [];
+      console.error("AI Generation Failed:", error);
+      throw new Error("AI එකට පාඩම සැකසීමට නොහැකි විය. කරුණාකර නැවත උත්සාහ කරන්න.");
     }
   },
 

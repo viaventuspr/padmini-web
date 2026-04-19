@@ -40,18 +40,21 @@ export const usePadminiStore = create(
         let isUserAdmin = false;
         try {
           if (db) {
-            const roleDocRef = doc(db, 'userRoles', user.uid);
-            const roleSnap = await getDoc(roleDocRef);
-            if (roleSnap.exists() && roleSnap.data().role === 'admin') {
-              isUserAdmin = true;
+            // Local Development Bypass: localhost එකේදී සැමවිටම Admin පෙන්වීම
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+               isUserAdmin = true;
             } else {
-              // Backward compatibility fallback using env ONLY if explicitly allowed, 
-              // but restricted completely by firestore rules anyway.
-              const adminEmailsStr = import.meta.env.VITE_ADMIN_EMAILS || '';
-              const adminList = adminEmailsStr.split(',').map(e => e.trim().toLowerCase());
-              if (adminList.includes(user.email?.toLowerCase())) {
+               const roleDocRef = doc(db, 'userRoles', user.uid);
+               const roleSnap = await getDoc(roleDocRef);
+               if (roleSnap.exists() && roleSnap.data().role === 'admin') {
                  isUserAdmin = true;
-              }
+               } else {
+                 const adminEmailsStr = import.meta.env.VITE_ADMIN_EMAILS || '';
+                 const adminList = adminEmailsStr.split(',').map(e => e.trim().toLowerCase());
+                 if (adminList.includes(user.email?.toLowerCase())) {
+                    isUserAdmin = true;
+                 }
+               }
             }
           }
         } catch (e) {

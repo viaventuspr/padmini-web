@@ -30,6 +30,23 @@ const QuizScreen = ({ questions = [], themeTitle, isHardPractice, isGuide, guide
   const correctIdx = q.correctAnswerIndex !== undefined ? q.correctAnswerIndex : q.ans;
   const hintText = q.hint || q.explain || "";
 
+  const [shuffledOptions, setShuffledOptions] = useState([]);
+  const [shuffledCorrectIdx, setShuffledCorrectIdx] = useState(null);
+
+  useEffect(() => {
+    if (q && options.length > 0) {
+      const optsWithMetadata = options.map((text, i) => ({
+        text,
+        isCorrect: i === correctIdx
+      }));
+      // 🎲 Deep Logic: Shuffle options
+      const shuffled = [...optsWithMetadata].sort(() => Math.random() - 0.5);
+      
+      setShuffledOptions(shuffled.map(o => o.text));
+      setShuffledCorrectIdx(shuffled.findIndex(o => o.isCorrect));
+    }
+  }, [idx, q]);
+
   const playSound = (type) => {
     const url = type === 'correct'
       ? 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'
@@ -51,7 +68,7 @@ const QuizScreen = ({ questions = [], themeTitle, isHardPractice, isGuide, guide
   const handleCheck = (forcedSelected = null) => {
     const finalSelected = forcedSelected !== null ? forcedSelected : selected;
     if (finalSelected === null || !q) return;
-    const correct = finalSelected === correctIdx;
+    const correct = finalSelected === shuffledCorrectIdx;
     setIsCorrect(correct);
     setIsChecked(true);
 
@@ -68,7 +85,7 @@ const QuizScreen = ({ questions = [], themeTitle, isHardPractice, isGuide, guide
       if (hearts <= 1) {
         setShowHeartAlert(true);
       } else {
-        VoiceService.speak(`වැරදියි. නිවැරදි පිළිතුර ${options[correctIdx]}. ${hintText}`);
+        VoiceService.speak(`වැරදියි. නිවැරදි පිළිතුර ${shuffledOptions[shuffledCorrectIdx]}. ${hintText}`);
       }
       if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     }

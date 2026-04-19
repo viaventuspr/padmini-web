@@ -113,7 +113,14 @@ const App = () => {
     const allThemes = allUnits.flatMap(u => u.themes);
     const theme = allThemes.find(t => String(t.id) === String(lessonId));
     if (!theme) return;
-    setActiveLesson(theme);
+    
+    // 🎲 Deep Logic: සසම්භාවී ප්‍රශ්න තෝරාගැනීම (Random Subset Selection)
+    // දරුවාට හැම වෙලේම අලුත් අත්දැකීමක් දීමට මුළු ප්‍රශ්න බැංකුවෙන් 5ක් පමණක් තෝරා ගනී.
+    const allQuestions = [...(theme.questions || [])];
+    const shuffled = allQuestions.sort(() => 0.5 - Math.random());
+    const selectedQuestions = shuffled.slice(0, 5); // සාමාන්‍යයෙන් ප්‍රශ්න 5ක් ප්‍රමාණවත්
+    
+    setActiveLesson({ ...theme, questions: selectedQuestions });
     setScreen('guide');
   };
 
@@ -180,8 +187,9 @@ const App = () => {
                         <Layout size={20} />
                       </button>
                       {isAdmin && (
-                        <button onClick={() => setScreen('admin')} className="w-11 h-11 rounded-full bg-lotus-900 flex items-center justify-center text-lotus-300 hover:bg-lotus-800 transition-all">
-                          <ShieldCheck size={20} />
+                        <button onClick={() => setScreen('admin')} className="h-11 px-4 rounded-full bg-lotus-900 flex items-center gap-2 text-lotus-300 hover:bg-lotus-800 transition-all shadow-glow-purple">
+                          <ShieldCheck size={18} />
+                          <span className="text-[10px] font-black uppercase tracking-wider">ගුරු පාලකය</span>
                         </button>
                       )}
                     </div>
