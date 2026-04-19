@@ -7,7 +7,7 @@ import SuccessScreen from './components/SuccessScreen';
 import ApiService from './services/api';
 import VoiceService from './services/voice';
 import { VoiceManager } from './services/VoiceManager';
-import { Loader2, Settings, Trophy, ListChecks, ShoppingBag, Layout, WifiOff, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Loader2, Settings, Trophy, ListChecks, ShoppingBag, Layout, WifiOff, AlertCircle, ShieldCheck, User } from 'lucide-react';
 
 // Lazy loading for Dashboard parts (Better Performance)
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
@@ -15,6 +15,7 @@ const ParentMode = lazy(() => import('./components/ParentMode'));
 const LoginScreen = lazy(() => import('./components/LoginScreen'));
 const Leaderboard = lazy(() => import('./components/Leaderboard'));
 const GemShop = lazy(() => import('./components/GemShop'));
+const UserProfile = lazy(() => import('./components/UserProfile'));
 
 // --- Professional Role Guard (Middleware Equivalent) ---
 const RoleGuard = ({ children, fallback = 'path' }) => {
@@ -196,6 +197,7 @@ const App = () => {
                       <button onClick={() => setScreen('leaderboard')} className="w-12 h-12 bg-white border-b-4 border-slate-200 rounded-2xl flex items-center justify-center text-yellow-500 shadow-lg hover:scale-110 transition-all"><Trophy size={24} /></button>
                   </div>
                   <div className="fixed bottom-24 right-6 flex flex-col gap-3 z-40">
+                      <button onClick={() => setScreen('profile')} className="w-12 h-12 bg-white border-b-4 border-slate-200 rounded-2xl flex items-center justify-center text-blue-500 shadow-lg hover:scale-110 transition-all"><User size={24} /></button>
                       <button onClick={() => setScreen('parent')} className="w-12 h-12 bg-white border-2 border-slate-100 rounded-full flex items-center justify-center text-slate-400 shadow-lg hover:scale-110 transition-all"><Layout size={24} /></button>
                       {isAdmin && (
                         <button onClick={() => setScreen('admin')} className="w-12 h-12 bg-slate-900 border-2 border-slate-700 rounded-full flex items-center justify-center text-brand-green shadow-lg hover:scale-110 transition-all">
@@ -208,6 +210,7 @@ const App = () => {
 
               {currentScreen === 'shop' && <GemShop onBack={() => setScreen('path')} />}
               {currentScreen === 'leaderboard' && <Leaderboard onBack={() => setScreen('path')} />}
+              {currentScreen === 'profile' && <UserProfile onBack={() => setScreen('path')} />}
               {currentScreen === 'guide' && <QuizScreen key="guide" questions={[]} themeTitle={activeLesson?.title} isGuide={true} onClose={() => setScreen('path')} onStart={() => setScreen('quiz')} guidebook={activeLesson?.guidebook} />}
               {currentScreen === 'quiz' && <QuizScreen key="quiz" questions={activeLesson?.questions} themeTitle={activeLesson?.title} onClose={() => setScreen('path')} onFinish={handleQuizFinish} />}
               {currentScreen === 'completion' && <SuccessScreen key="success" score={lastResult.score} total={lastResult.total} timeSpent={timeSpent} onContinue={() => setScreen('path')} />}
