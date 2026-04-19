@@ -46,7 +46,7 @@ const App = () => {
 
   const {
     userName, currentScreen, setScreen, userId, xp, gems, level, streak,
-    addStudyTime, completedLessonIds, isAdmin
+    addStudyTime, completedLessonIds, isAdmin, fcmToken
   } = store;
 
   const [activeLesson, setActiveLesson] = useState(null);
@@ -110,9 +110,9 @@ const App = () => {
 
   useEffect(() => {
     if (userId && userName) {
-      ApiService.saveUserProgress(userId, { userName, xp, level, streak, gems, completedLessonIds, isAdmin });
+      ApiService.saveUserProgress(userId, { userName, xp, level, streak, gems, completedLessonIds, isAdmin, fcmToken });
     }
-  }, [xp, level, streak, gems, userId, userName, completedLessonIds, isAdmin]);
+  }, [xp, level, streak, gems, userId, userName, completedLessonIds, isAdmin, fcmToken]);
 
   const startLessonSequence = (lessonId) => {
     const allThemes = allUnits.flatMap(u => u.themes);

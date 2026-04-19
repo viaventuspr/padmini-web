@@ -54,10 +54,11 @@ const VoiceService = {
     // --- පියවර 1: දේශීය හඬ (Local File) පරීක්ෂාව (Ultra Fast) ---
     if (localFile) {
       try {
+        // Base64 Custom Voices (Teacher's Recordings) do not fail here!
         await VoiceService.playFile(localFile);
         return;
       } catch (e) {
-        console.warn(`Local file ${localFile} failed. Switching to AI...`);
+        console.warn(`Local file override missing for text. Falling back to next layer...`);
       }
     }
 
@@ -110,6 +111,12 @@ const VoiceService = {
 
   playCloudTTS: (text) => {
     return new Promise((resolve, reject) => {
+      // ලෝක සජීවී (Live Padmini Domain) එකේදී Google Free AI කියවන්නේ නැත (CORS අවහිරය)
+      // ඒ නිසා රතු පාට Error එකක් Console එකේ දාන්නේ නැතිව කෙළින්ම Fallback එකට යවයි.
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+         return reject(new Error("Production environment overrides Google TTS. Use Base64 Teacher Voices or Native Speech."));
+      }
+      
       const url = `https://translate.google.com.vn/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=si&client=tw-ob`;
       const audio = new Audio(url);
       currentAudio = audio;

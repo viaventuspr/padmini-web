@@ -1,66 +1,59 @@
-import { db, storage } from '../firebase';
+import { db } from '../firebase';
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import VoiceService from './voice';
 
-// ගුරුතුමියගේ කටහඬ කළමනාකරණය කරන ලෝක මට්ටමේ සේවාව (Voice Studio Manager)
+// ගුරුතුමියගේ කටහඬ කළමනාකරණය (Free Tier FireStore Base64 Hack)
 export const VoiceManager = {
-  // Database එකේ සේව් කර ඇති ගුරුවරියගේ කටහඬවල් ඇප් එකට ගැනීම
   loadCustomVoices: async () => {
     if (!db) return;
     try {
       const docSnap = await getDoc(doc(db, "settings", "voiceMap"));
       if (docSnap.exists()) {
         const customMap = docSnap.data().mappedVoices || {};
-        // මුල් VoiceService එකේ ඇති හඬවල් (Default TTS / local MP3s) ගුරුවරියගේ හඬ වලින් Override කිරීම
         VoiceService.localVoiceMap = { ...VoiceService.localVoiceMap, ...customMap };
-        console.log("✅ ගුරුතුමියගේ සජීවී කටහඬවල් සාර්ථකව පද්ධතියට සම්බන්ධ විය.");
+        console.log("✅ ගුරුතුමියගේ සජීවී කටහඬවල් සම්පූර්ණයෙන්ම Load විය.");
       }
     } catch (e) {
       console.warn("Failed to load custom voices:", e);
     }
   },
 
-  // අලුත් කටහඬක් රෙකෝඩ් කර Cloud Storage එකට යවා Database එක Update කිරීම
   uploadAndMapVoice: async (textKey, audioBlob, onProgress) => {
-    if (!storage || !db) throw new Error("Firebase තවම සම්පූර්ණයෙන් සක්‍රීය නැත.");
+    if (!db) throw new Error("Firebase තවම ක්‍රියාත්මක නැත.");
     
-    // Hash the text loosely or use standard keys
-    const fileName = `voices/teacher_${Date.now()}.webm`;
-    const storageRef = ref(storage, fileName);
+    // Safety check for Firestore 1MB limits - prevent exceeding ~500KB to be safe
+    if (audioBlob.size > 500000) {
+       throw new Error("හඬ ගොනුව විශාල වැඩියි (උපරිමය 500KB). කරුණාකර කෙටි හඬක් ලබා දෙන්න.");
+    }
 
-    const uploadTask = uploadBytesResumable(storageRef, audioBlob);
+    if(onProgress) onProgress(30);
 
+    // Convert Audio Blob to Base64 Data URL
     return new Promise((resolve, reject) => {
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          if(onProgress) onProgress(progress);
-        }, 
-        (error) => {
-          reject(error);
-        }, 
-        async () => {
-          // Upload සම්පූර්ණයි, එබැවින් Download URL එක ගන්නවා
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onloadend = async () => {
+        const base64DataUrl = reader.result;
+        if(onProgress) onProgress(70);
+
+        try {
+          const docRef = doc(db, "settings", "voiceMap");
+          // Merge the base64 string directly into Firestore Map
+          await setDoc(docRef, {
+            mappedVoices: {
+              [textKey]: base64DataUrl
+            }
+          }, { merge: true });
           
-          // Database එකට එම URL එක අදාළ වාක්‍යයට විරුද්ධව සේව් කිරීම (Merging Map)
-          try {
-            const docRef = doc(db, "settings", "voiceMap");
-            await setDoc(docRef, {
-              mappedVoices: {
-                [textKey]: downloadURL
-              }
-            }, { merge: true });
-            
-            // App state එක update කිරීම
-            VoiceService.localVoiceMap[textKey] = downloadURL;
-            resolve(downloadURL);
-          } catch(err) {
-            reject(err);
-          }
+          if(onProgress) onProgress(100);
+          VoiceService.localVoiceMap[textKey] = base64DataUrl;
+          resolve(base64DataUrl);
+        } catch(err) {
+          reject(err);
         }
-      );
+      };
+      
+      reader.readAsDataURL(audioBlob);
     });
   }
 };

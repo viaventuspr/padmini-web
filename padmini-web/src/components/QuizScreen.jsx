@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Heart, Volume2, Mic, MicOff, MessageCircle, Sparkles, Loader2, Gem, AlertCircle } from 'lucide-react';
+import { X, Check, Heart, Volume2, Mic, MicOff, MessageCircle, Sparkles, Loader2, Gem, AlertCircle, BookOpen, CheckCircle2, PlayCircle } from 'lucide-react';
 import VoiceService from '../services/voice';
 import SpeechService from '../services/speech';
 import AiService from '../services/ai';
 import { usePadminiStore } from '../store';
 
-const QuizScreen = ({ questions = [], themeTitle, isHardPractice, onFinish, onClose }) => {
+const QuizScreen = ({ questions = [], themeTitle, isHardPractice, isGuide, guidebook, onStart, onFinish, onClose }) => {
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState(null);
   const [isChecked, setIsChecked] = useState(false);
@@ -100,6 +100,39 @@ const QuizScreen = ({ questions = [], themeTitle, isHardPractice, onFinish, onCl
       onFinish(score + (isCorrect ? 1 : 0), questions.length);
     }
   };
+
+  if (isGuide) {
+    return (
+      <div className="fixed inset-0 bg-[#FFFEF7] z-[60] flex flex-col p-8 font-sinhala overflow-y-auto pb-32">
+        <button onClick={onClose} className="absolute top-6 left-6 text-slate-400 p-2 hover:text-slate-600 transition"><X size={32} /></button>
+        <div className="mt-16 text-center space-y-6 max-w-md mx-auto w-full">
+           <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-brand-sky relative">
+              <BookOpen size={48} className="animate-bounce relative z-10" />
+           </div>
+           
+           <h1 className="text-3xl font-black text-slate-800 leading-snug">{themeTitle}</h1>
+           
+           <div className="bg-white p-6 rounded-[2.5rem] border-2 border-slate-100 text-left space-y-5 shadow-sm">
+              <p className="font-bold text-lg text-slate-700 leading-relaxed text-center">{guidebook?.text || "මෙම පාඩම පිළිබඳව කෙටි හැඳින්වීමක්..."}</p>
+              
+              <div className="grid gap-3 pt-4 border-t-2 border-slate-50">
+                {(guidebook?.points || ["වැදගත් කරුණු"]).map((p, i) => (
+                   <div key={i} className="flex gap-4 items-center bg-green-50 p-4 rounded-2xl text-brand-green font-bold">
+                      <CheckCircle2 size={24} className="shrink-0" /> <span className="leading-snug">{p}</span>
+                   </div>
+                ))}
+              </div>
+           </div>
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 p-8 pb-10 bg-gradient-to-t from-[#FFFEF7] md:bg-white md:border-t-2 border-slate-100 max-w-md mx-auto z-[70]">
+           <button onClick={() => { VoiceService.stop(); onStart && onStart(); }} className="w-full py-5 rounded-2xl font-black text-xl shadow-xl transition-all active:translate-y-2 uppercase tracking-widest border-b-8 bg-[#58CC02] border-[#46A302] text-white flex items-center justify-center gap-3">
+              <PlayCircle size={28} /> අභ්‍යාස පටන් ගමු
+           </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!questions.length || !q) return null;
 

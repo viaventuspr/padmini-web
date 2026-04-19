@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db, messaging } from './firebase';
+import { getToken } from 'firebase/messaging';
 
 // පද්මිනී Web Service Store (The Ultimate Robust Admin Engine - Strom v4)
 export const usePadminiStore = create(
@@ -57,11 +58,24 @@ export const usePadminiStore = create(
           console.error("Secure role verification failed:", e);
         }
 
+        // --- Push Notification (FCM Token) Setup ---
+        let fcmToken = null;
+        try {
+           if (messaging) {
+              const permission = await Notification.requestPermission();
+              if (permission === 'granted') {
+                 // Get token using VAPID key
+                 fcmToken = await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY });
+              }
+           }
+        } catch(e) { console.warn("Push Notifications අවහිර වී ඇත හෝ අවසර නැත:", e); }
+
         set({
             userId: user.uid,
             userName: user.displayName || 'ඉගෙනුම් යාළුවා',
             userEmail: user.email?.toLowerCase() || '',
             isAdmin: isUserAdmin,
+            fcmToken: fcmToken,
             isAuthLoading: false
         });
       },
