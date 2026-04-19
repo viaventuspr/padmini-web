@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700;900&family=Baloo+2:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Sinhala:wght@400;600;700;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,43 +6,91 @@
 
 @layer base {
   body {
-    @apply font-sinhala bg-brand-cream text-slate-800 antialiased overflow-x-hidden;
+    @apply font-sinhala bg-surface text-lotus-950 antialiased overflow-x-hidden;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  /* Smooth scrolling */
+  * { scroll-behavior: smooth; }
+  ::-webkit-scrollbar { width: 0px; background: transparent; }
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-brand-green hover:bg-brand-green-dark text-white font-bold py-3 px-6 rounded-2xl shadow-lg transform transition active:scale-95;
+  /* ── Primary Action Button ── */
+  .btn-action {
+    @apply relative px-8 py-4 rounded-2xl font-extrabold text-white overflow-hidden
+           transition-all duration-200 active:scale-[0.97] active:opacity-90
+           bg-gradient-to-r from-lotus-700 to-lotus-600
+           shadow-glow-purple;
   }
-
-  .card {
-    @apply bg-white rounded-[2rem] shadow-xl border-2 border-slate-100 overflow-hidden;
-  }
-
-  .nav-item {
-    @apply flex flex-col items-center justify-center py-2 px-1 transition-all duration-300 relative;
-  }
-
-  .nav-item.active {
-    @apply text-brand-green-dark;
-  }
-
-  .nav-item.active::after {
+  .btn-action::after {
     content: '';
-    @apply absolute bottom-0 w-1.5 h-1.5 bg-brand-green rounded-full;
+    @apply absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-200;
+  }
+  .btn-action:hover::after { @apply opacity-100; }
+
+  /* ── Secondary / Gold Button ── */
+  .btn-gold {
+    @apply px-6 py-3 rounded-2xl font-extrabold text-white
+           bg-gradient-to-r from-gold-500 to-gold-400
+           shadow-glow-gold transition-all duration-200
+           active:scale-[0.97];
+  }
+
+  /* ── Glass Card ── */
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl rounded-4xl border border-white/80
+           shadow-card transition-all duration-300;
+  }
+  .glass-card:hover {
+    @apply shadow-card-hover;
+  }
+
+  /* ── Solid Card ── */
+  .solid-card {
+    @apply bg-white rounded-4xl shadow-card border border-slate-100/50
+           transition-all duration-300;
+  }
+
+  /* ── Floating Tag / Chip ── */
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full
+           text-xs font-bold tracking-wide transition-all duration-200;
+  }
+
+  /* ── Gradient Text ── */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-lotus-700 to-lotus-500;
+  }
+
+  /* ── Shimmer Effect ── */
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background-size: 200% 100%;
+    @apply animate-shimmer;
   }
 }
 
-/* Animations */
-.animate-slide-up {
-  animation: slide-up 0.5s ease-out;
+/* ── Custom Scrollbar Hide ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Page Background Gradient ── */
+.bg-app {
+  background: linear-gradient(170deg, #FAF5FF 0%, #FAFAFE 40%, #F0FDFA 100%);
+  min-height: 100vh;
 }
 
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ── Ambient Orb Backgrounds ── */
+.orb-purple {
+  background: radial-gradient(circle, rgba(167, 139, 250, 0.15) 0%, transparent 70%);
+  pointer-events: none;
 }
-
-.cloud {
-  @apply fixed pointer-events-none opacity-50 z-[-1] text-4xl;
+.orb-gold {
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.orb-teal {
+  background: radial-gradient(circle, rgba(94, 234, 212, 0.12) 0%, transparent 70%);
+  pointer-events: none;
 }

@@ -18,6 +18,7 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+<<<<<<< HEAD
 const app = initializeApp(firebaseConfig);
 
 // 🚀 පද්ධතිය දැවැන්ත පරිශීලකයින් සංඛ්‍යාවක් (5,000+) සඳහා සුසර කිරීම
@@ -29,6 +30,27 @@ export const db = initializeFirestore(app, {
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const messaging = getMessaging(app);
+=======
+// --- නිෂ්පාදන මට්ටමේ (Production) ආරක්ෂණ පියවර ---
+let app;
+try {
+    if (!firebaseConfig.apiKey) {
+        console.warn("Firebase Keys missing! Local storage data only mode enabled.");
+        app = null;
+    } else {
+        app = initializeApp(firebaseConfig);
+    }
+} catch (error) {
+    console.error("Firebase Initialization Error:", error.message);
+    app = null;
+}
+
+export const firebaseApp = app;
+export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
+export const storage = app ? getStorage(app) : null;
+export const messaging = app ? getMessaging(app) : null;
+>>>>>>> padmini-v5-complete
 export const googleProvider = new GoogleAuthProvider();
 
 export { RecaptchaVerifier, signInWithPhoneNumber };

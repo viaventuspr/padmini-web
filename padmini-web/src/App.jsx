@@ -7,9 +7,12 @@ import SuccessScreen from './components/SuccessScreen';
 import ApiService from './services/api';
 import VoiceService from './services/voice';
 import { VoiceManager } from './services/VoiceManager';
+<<<<<<< HEAD
 import { Loader2, Settings, Trophy, ListChecks, ShoppingBag, Layout, WifiOff, AlertCircle, ShieldCheck, User } from 'lucide-react';
+=======
+import { Loader2, ShoppingBag, Layout, WifiOff, ShieldCheck, Trophy, Gem } from 'lucide-react';
+>>>>>>> padmini-v5-complete
 
-// Lazy loading for Dashboard parts (Better Performance)
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const ParentMode = lazy(() => import('./components/ParentMode'));
 const LoginScreen = lazy(() => import('./components/LoginScreen'));
@@ -17,27 +20,23 @@ const Leaderboard = lazy(() => import('./components/Leaderboard'));
 const GemShop = lazy(() => import('./components/GemShop'));
 const UserProfile = lazy(() => import('./components/UserProfile'));
 
-// --- Professional Role Guard (Middleware Equivalent) ---
+// ── Role Guard ──
 const RoleGuard = ({ children, fallback = 'path' }) => {
   const { isAdmin, setScreen, isAuthLoading } = usePadminiStore();
-
   useEffect(() => {
     if (!isAuthLoading && !isAdmin) {
-      console.error("⛔ අනවසර ඇතුළුවීමක්! Node.js Middleware මගින් ඔබව වළක්වා ඇත.");
       setScreen(fallback);
       window.history.replaceState(null, '', '/');
     }
   }, [isAdmin, setScreen, fallback, isAuthLoading]);
 
-  // Loading spinner during backend Role Auth verification
   if (isAuthLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-12 h-12 text-[#58CC02] animate-spin" />
+        <Loader2 className="w-10 h-10 text-lotus-500 animate-spin" />
       </div>
     );
   }
-
   return isAdmin ? children : null;
 };
 
@@ -59,7 +58,6 @@ const App = () => {
   } = store;
 
   const [activeLesson, setActiveLesson] = useState(null);
-  const [quizQuestions, setQuizQuestions] = useState([]);
   const [lastResult, setLastResult] = useState({ score: 0, total: 0 });
   const [startTime, setStartTime] = useState(null);
   const [timeSpent, setTimeSpent] = useState('0:00');
@@ -67,28 +65,32 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-    return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
-    };
+    const update = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update); };
   }, []);
 
-  // --- Smart URL Router (Middleware Integration) ---
   useEffect(() => {
     const handleUrlRoute = () => {
+<<<<<<< HEAD
       const path = window.location.pathname.toLowerCase().replace(/\/$/, "");
+=======
+      const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
+>>>>>>> padmini-v5-complete
       if (path === '/admin') setScreen('admin');
       else if (path === '/shop') setScreen('shop');
       else if (path === '/leaderboard') setScreen('leaderboard');
+      else if (path === '/parent') setScreen('parent');
     };
+<<<<<<< HEAD
     
     handleUrlRoute(); 
+=======
+    handleUrlRoute();
+>>>>>>> padmini-v5-complete
     window.addEventListener('popstate', handleUrlRoute);
     VoiceManager.loadCustomVoices();
-
     return () => window.removeEventListener('popstate', handleUrlRoute);
   }, [setScreen]);
 
@@ -97,29 +99,43 @@ const App = () => {
     if (currentScreen === 'admin') newPath = '/admin';
     else if (currentScreen === 'shop') newPath = '/shop';
     else if (currentScreen === 'leaderboard') newPath = '/leaderboard';
-    
-    if (window.location.pathname !== newPath) {
-       window.history.pushState(null, '', newPath);
-    }
+    else if (currentScreen === 'parent') newPath = '/parent';
+    if (window.location.pathname !== newPath) window.history.pushState(null, '', newPath);
   }, [currentScreen]);
 
   useEffect(() => {
-    const unsubscribe = ApiService.getUnits((units) => {
-      setAllUnits(units);
-      setIsLoading(false);
-    });
-    return () => {
-      if (typeof unsubscribe === 'function') unsubscribe();
-    };
+    const unsubscribe = ApiService.getUnits((units) => { setAllUnits(units); setIsLoading(false); });
+    return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
   }, []);
 
   // 🚀 Write-Back Optimization Sync (For 5000+ Users)
   useEffect(() => {
     if (userId && userName) {
+<<<<<<< HEAD
       const timeoutId = setTimeout(() => {
         store.saveProgressToCloud();
       }, 15000); // 15s delay (Write-Back strategy)
       return () => clearTimeout(timeoutId);
+=======
+      const syncData = { userName, xp, level, streak, gems, completedLessonIds, isAdmin, fcmToken: fcmToken || null };
+      ApiService.saveUserProgress(userId, syncData);
+
+      if (!fcmToken && 'Notification' in window && Notification.permission !== 'denied') {
+        import('./firebase').then(({ messaging }) => {
+          if (messaging) {
+            Notification.requestPermission().then(permission => {
+              if (permission === 'granted') {
+                import('firebase/messaging').then(({ getToken }) => {
+                  getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY })
+                    .then(token => usePadminiStore.setState({ fcmToken: token }))
+                    .catch(() => {});
+                });
+              }
+            });
+          }
+        });
+      }
+>>>>>>> padmini-v5-complete
     }
   }, [xp, level, streak, gems, userId, completedLessonIds]);
 
@@ -146,13 +162,20 @@ const App = () => {
     const allThemes = allUnits.flatMap(u => u.themes);
     const theme = allThemes.find(t => String(t.id) === String(lessonId));
     if (!theme) return;
-    setActiveLesson(theme);
+    
+    // 🎲 Deep Logic: සසම්භාවී ප්‍රශ්න තෝරාගැනීම (Random Subset Selection)
+    // දරුවාට හැම වෙලේම අලුත් අත්දැකීමක් දීමට මුළු ප්‍රශ්න බැංකුවෙන් 5ක් පමණක් තෝරා ගනී.
+    const allQuestions = [...(theme.questions || [])];
+    const shuffled = allQuestions.sort(() => 0.5 - Math.random());
+    const selectedQuestions = shuffled.slice(0, 5); // සාමාන්‍යයෙන් ප්‍රශ්න 5ක් ප්‍රමාණවත්
+    
+    setActiveLesson({ ...theme, questions: selectedQuestions });
     setScreen('guide');
     setStartTime(Date.now());
   };
 
   const handleQuizFinish = (score, total) => {
-    const durationSeconds = Math.floor((Date.now() - startTime) / 1000);
+    const durationSeconds = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
     if (addStudyTime) addStudyTime(durationSeconds);
     const mins = Math.floor(durationSeconds / 60);
     const secs = durationSeconds % 60;
@@ -161,36 +184,48 @@ const App = () => {
     store.completeLesson(score, total, activeLesson?.id, durationSeconds);
   };
 
+  // ── Loading State ──
   if (isLoading) {
     return (
-      <div className="max-w-md mx-auto min-h-screen bg-[#FFFEF7] flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#58CC02] animate-spin" />
+      <div className="max-w-lg mx-auto min-h-screen bg-app flex flex-col items-center justify-center gap-4 px-8">
+        <div className="relative">
+          <Loader2 className="w-12 h-12 text-lotus-500 animate-spin" />
+          <div className="absolute inset-0 bg-lotus-400/20 blur-xl rounded-full"></div>
+        </div>
+        <p className="text-xs font-bold text-lotus-300 uppercase tracking-widest">පද්මිනී පන්තිය සම්බන්ධ කරමින්...</p>
+        <button onClick={() => setIsLoading(false)} className="mt-4 text-[10px] text-lotus-400 underline font-bold">ප්‍රමාද වැඩියිද? ඇතුළට යමු</button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-[#FFFEF7] font-sinhala relative overflow-hidden text-slate-800 shadow-2xl">
+    <div className="max-w-lg mx-auto min-h-screen bg-app font-sinhala relative overflow-hidden text-lotus-950">
 
+<<<<<<< HEAD
+=======
+      {/* Offline Alert */}
+>>>>>>> padmini-v5-complete
       <AnimatePresence>
         {!isOnline && (
-          <motion.div initial={{ y: -50 }} animate={{ y: 0 }} exit={{ y: -50 }} className="fixed top-0 left-0 right-0 z-[1000] bg-rose-500 text-white p-2 text-center text-[10px] font-black uppercase">
-            ⚠️ Offline - ප්‍රගතිය සුරැකීම තාවකාලිකව නතර වී ඇත
+          <motion.div initial={{ y: -50 }} animate={{ y: 0 }} exit={{ y: -50 }}
+            className="fixed top-0 left-0 right-0 z-[1000] bg-gradient-to-r from-red-500 to-rose-500 text-white p-2 text-center text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+            <WifiOff size={12} /> Offline - ප්‍රගතිය සුරැකීම තාවකාලිකව නතර වී ඇත
           </motion.div>
         )}
       </AnimatePresence>
 
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-10 h-10 text-brand-sky animate-spin opacity-20" /></div>}>
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-10 h-10 text-lotus-300 animate-spin" /></div>}>
         <AnimatePresence mode="wait">
           {!userName ? (
             <LoginScreen key="login" onDone={() => {
-                const path = window.location.pathname.toLowerCase().replace(/\/$/, "");
-                setScreen(path === '/admin' ? 'admin' : 'path');
+              const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
+              setScreen(path === '/admin' ? 'admin' : 'path');
             }} />
           ) : (
             <>
               {currentScreen === 'path' && (
                 <motion.div key="path" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+<<<<<<< HEAD
                   <LessonPath onStartLesson={startLessonSequence} lessons={allUnits.flatMap(u => u.themes)} />
                   <div className="fixed bottom-24 left-6 flex flex-col gap-3 z-40">
                       <button onClick={() => setScreen('shop')} className="w-12 h-12 bg-white border-b-4 border-slate-200 rounded-2xl flex items-center justify-center text-brand-sky shadow-lg hover:scale-110 transition-all"><ShoppingBag size={24} /></button>
@@ -199,39 +234,53 @@ const App = () => {
                   <div className="fixed bottom-24 right-6 flex flex-col gap-3 z-40">
                       <button onClick={() => setScreen('profile')} className="w-12 h-12 bg-white border-b-4 border-slate-200 rounded-2xl flex items-center justify-center text-blue-500 shadow-lg hover:scale-110 transition-all"><User size={24} /></button>
                       <button onClick={() => setScreen('parent')} className="w-12 h-12 bg-white border-2 border-slate-100 rounded-full flex items-center justify-center text-slate-400 shadow-lg hover:scale-110 transition-all"><Layout size={24} /></button>
+=======
+                  <LessonPath onStartLesson={startLessonSequence} lessons={allUnits.flatMap(u => u.themes)} allUnits={allUnits} />
+
+                  {/* ── Floating Navigation ── */}
+                  <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+                    <div className="flex items-center gap-2 bg-white/90 backdrop-blur-xl rounded-full px-2 py-2 shadow-float border border-lotus-100/50">
+                      <button onClick={() => setScreen('shop')} className="w-11 h-11 rounded-full bg-lotus-50 flex items-center justify-center text-lotus-500 hover:bg-lotus-100 transition-all">
+                        <Gem size={20} />
+                      </button>
+                      <button onClick={() => setScreen('leaderboard')} className="w-11 h-11 rounded-full bg-gold-50 flex items-center justify-center text-gold-500 hover:bg-gold-100 transition-all">
+                        <Trophy size={20} />
+                      </button>
+                      <button onClick={() => setScreen('parent')} className="w-11 h-11 rounded-full bg-ocean-50 flex items-center justify-center text-ocean-500 hover:bg-ocean-100 transition-all">
+                        <Layout size={20} />
+                      </button>
+>>>>>>> padmini-v5-complete
                       {isAdmin && (
-                        <button onClick={() => setScreen('admin')} className="w-12 h-12 bg-slate-900 border-2 border-slate-700 rounded-full flex items-center justify-center text-brand-green shadow-lg hover:scale-110 transition-all">
-                            <ShieldCheck size={24} />
+                        <button onClick={() => setScreen('admin')} className="h-11 px-4 rounded-full bg-lotus-900 flex items-center gap-2 text-lotus-300 hover:bg-lotus-800 transition-all shadow-glow-purple">
+                          <ShieldCheck size={18} />
+                          <span className="text-[10px] font-black uppercase tracking-wider">ගුරු පාලකය</span>
                         </button>
                       )}
+                    </div>
                   </div>
                 </motion.div>
               )}
 
               {currentScreen === 'shop' && <GemShop onBack={() => setScreen('path')} />}
               {currentScreen === 'leaderboard' && <Leaderboard onBack={() => setScreen('path')} />}
+<<<<<<< HEAD
               {currentScreen === 'profile' && <UserProfile onBack={() => setScreen('path')} />}
               {currentScreen === 'guide' && <QuizScreen key="guide" questions={[]} themeTitle={activeLesson?.title} isGuide={true} onClose={() => setScreen('path')} onStart={() => setScreen('quiz')} guidebook={activeLesson?.guidebook} />}
               {currentScreen === 'quiz' && <QuizScreen key="quiz" questions={activeLesson?.questions} themeTitle={activeLesson?.title} onClose={() => setScreen('path')} onFinish={handleQuizFinish} />}
+=======
+              {currentScreen === 'guide' && <QuizScreen key="guide" questions={[]} themeTitle={activeLesson?.title} isGuide={true} onClose={() => setScreen('path')} onStart={() => { setStartTime(Date.now()); setScreen('quiz'); }} guidebook={activeLesson?.guidebook} />}
+              {currentScreen === 'quiz' && <QuizScreen key="quiz" questions={activeLesson?.questions || []} themeTitle={activeLesson?.title} onClose={() => setScreen('path')} onFinish={handleQuizFinish} />}
+>>>>>>> padmini-v5-complete
               {currentScreen === 'completion' && <SuccessScreen key="success" score={lastResult.score} total={lastResult.total} timeSpent={timeSpent} onContinue={() => setScreen('path')} />}
 
               {currentScreen === 'admin' && (
-                <RoleGuard>
-                  <AdminDashboard onBack={() => setScreen('path')} />
-                </RoleGuard>
+                <RoleGuard><AdminDashboard onBack={() => setScreen('path')} /></RoleGuard>
               )}
-
               {currentScreen === 'parent' && <ParentMode onBack={() => setScreen('path')} />}
             </>
           )}
         </AnimatePresence>
       </Suspense>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        .btn-primary { background-color: #58CC02; border-bottom: 8px solid #46A302; color: white; border-radius: 1.5rem; transition: all 0.1s; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-        .btn-primary:active { border-bottom-width: 0px; transform: translateY(4px); }
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
-      `}} />
     </div>
   );
 };

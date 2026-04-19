@@ -121,24 +121,47 @@ const AdminDashboard = ({ onBack }) => {
 
     setErrorInfo("");
     setIsProcessing(true);
-    try {
-      const text = await extractTextFromPDF(file);
-      const questions = await AiService.generateQuestionsFromText(text);
+    setGeneratedQuestions([]); // Reset previous content
 
-      if (!questions) throw new Error("AI එකට ප්‍රශ්න සෑදීමට නොහැකි විය.");
+    try {
+      let questions = [];
+
+      if (file.type === "application/pdf") {
+        const text = await extractTextFromPDF(file);
+        if (!text || text.trim().length < 20) {
+          throw new Error("මෙම PDF එකෙන් අකුරු කියවිය නොහැක. මෙය පින්තූරයක් ලෙස ඇති PDF එකක් විය හැකියි.");
+        }
+        questions = await AiService.generateQuestionsFromText(text);
+      } else if (file.type.startsWith("image/")) {
+        // ✨ Deep Fix: පින්තූරයක් (Photo) නම් Vision AI වෙත යැවීම
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve) => {
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.readAsDataURL(file);
+        });
+        const base64 = await base64Promise;
+        questions = await AiService.generateQuestionsFromImage(base64, file.type);
+      } else {
+        throw new Error("කරුණාකර PDF හෝ පින්තූරයක් (JPG/PNG) පමණක් තෝරන්න.");
+      }
+
+      if (!questions || questions.length === 0) {
+        throw new Error("මෙම පත්‍රිකාවෙන් ප්‍රශ්න සෑදීමට AI එකට නොහැකි විය. කරුණාකර වෙනත් එකක් උත්සාහ කරන්න.");
+      }
 
       const formatted = questions.map((q, idx) => ({
         id: Date.now() + idx,
-        q: q.q || q.question,
-        opts: q.opts || q.options,
-        ans: q.ans !== undefined ? q.ans : q.correctAnswerIndex,
-        explain: q.explain || q.hint,
+        q: q.q || q.question || "ප්‍රශ්නයක් නැත",
+        opts: q.opts || q.options || ["A", "B", "C", "D"],
+        ans: q.ans !== undefined ? q.ans : (q.correctAnswerIndex || 0),
+        explain: q.explain || q.hint || "විස්තරයක් නැත",
         emoji: q.emoji || "🌿"
       }));
 
       setGeneratedQuestions(formatted);
-      setLessonTitle(questions[0]?.topic || "අලුත් පාඩම");
+      setLessonTitle(questions[0]?.topic || file.name.replace(".pdf", ""));
     } catch (error) {
+      console.error("Upload Error:", error);
       setErrorInfo(error.message);
     } finally {
       setIsProcessing(false);
@@ -222,22 +245,30 @@ const AdminDashboard = ({ onBack }) => {
             </div>
         </section>
 
-        {!generatedQuestions.length ? (
-          <motion.div
-            whileHover={{ scale: 0.98 }} whileTap={{ scale: 0.95 }}
-            onClick={() => fileInputRef.current.click()}
-            className="bg-white p-12 rounded-[3rem] border-4 border-dashed border-slate-200 text-center space-y-4 cursor-pointer hover:border-brand-green transition-all group"
-          >
-            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" className="hidden" />
-            <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto text-brand-green group-hover:rotate-12 transition-transform">
-              {isProcessing ? <Loader2 className="animate-spin" size={48} /> : <Upload size={48} />}
-            </div>
-            <div>
-                <h2 className="text-xl font-black text-slate-800">{isProcessing ? "ප්‍රශ්න සකසමින්..." : "PDF එකක් එක් කරන්න"}</h2>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">AI තාක්ෂණයෙන් තත්පර 10කින් පාඩම හැදේ</p>
-            </div>
-          </motion.div>
-        ) : (
+            {errorInfo && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-rose-50 border-2 border-rose-100 rounded-2xl flex items-center gap-3 text-rose-500">
+                <AlertCircle size={20} />
+                <p className="text-xs font-bold leading-tight">{errorInfo}</p>
+              </motion.div>
+            )}
+
+            {!generatedQuestions.length ? (
+              <motion.div
+                whileHover={{ scale: 0.98 }} whileTap={{ scale: 0.95 }}
+                onClick={() => !isProcessing && fileInputRef.current.click()}
+                className={`bg-white p-12 rounded-[3rem] border-4 border-dashed text-center space-y-4 cursor-pointer transition-all group
+                  ${isProcessing ? 'border-brand-sky opacity-50 cursor-wait' : 'border-slate-200 hover:border-brand-green'}`}
+              >
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" className="hidden" />
+                <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto text-brand-green group-hover:rotate-12 transition-transform">
+                  {isProcessing ? <Loader2 className="animate-spin" size={48} /> : <Upload size={48} />}
+                </div>
+                <div>
+                    <h2 className="text-xl font-black text-slate-800">{isProcessing ? "ප්‍රශ්න සකසමින්..." : "PDF එකක් එක් කරන්න"}</h2>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">AI තාක්ෂණයෙන් තත්පර කීපයකින් පාඩම හැදේ</p>
+                </div>
+              </motion.div>
+            ) : (
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 shadow-sm">
                 <input
