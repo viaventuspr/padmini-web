@@ -124,17 +124,26 @@ const AdminDashboard = ({ onBack }) => {
     setGeneratedQuestions([]); // Reset previous content
 
     try {
-      if (file.type !== "application/pdf") {
-        throw new Error("කරුණාකර PDF ගොනුවක් පමණක් තෝරන්න.");
-      }
+      let questions = [];
 
-      const text = await extractTextFromPDF(file);
-      
-      if (!text || text.trim().length < 20) {
-        throw new Error("මෙම PDF එකෙන් අකුරු කියවිය නොහැක. මෙය පින්තූරයක් ලෙස ඇති PDF එකක් විය හැකියි.");
+      if (file.type === "application/pdf") {
+        const text = await extractTextFromPDF(file);
+        if (!text || text.trim().length < 20) {
+          throw new Error("මෙම PDF එකෙන් අකුරු කියවිය නොහැක. මෙය පින්තූරයක් ලෙස ඇති PDF එකක් විය හැකියි.");
+        }
+        questions = await AiService.generateQuestionsFromText(text);
+      } else if (file.type.startsWith("image/")) {
+        // ✨ Deep Fix: පින්තූරයක් (Photo) නම් Vision AI වෙත යැවීම
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve) => {
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.readAsDataURL(file);
+        });
+        const base64 = await base64Promise;
+        questions = await AiService.generateQuestionsFromImage(base64, file.type);
+      } else {
+        throw new Error("කරුණාකර PDF හෝ පින්තූරයක් (JPG/PNG) පමණක් තෝරන්න.");
       }
-
-      const questions = await AiService.generateQuestionsFromText(text);
 
       if (!questions || questions.length === 0) {
         throw new Error("මෙම පත්‍රිකාවෙන් ප්‍රශ්න සෑදීමට AI එකට නොහැකි විය. කරුණාකර වෙනත් එකක් උත්සාහ කරන්න.");

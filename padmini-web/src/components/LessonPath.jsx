@@ -107,9 +107,26 @@ const LessonPath = ({ onStartLesson, lessons = [], allUnits = [] }) => {
 
   const {
     completedLessonIds = [], xp = 0, streak = 0, userName = 'ළමයා',
-    hearts = 5, avatarId = 'owl', level = 1,
-    achievements = [], newAchievementNotif = null, clearAchievementNotif = () => {}
+    hearts = 5, avatarId = 'owl', level = 1, masteryPool = [],
+    achievements = [], newAchievementNotif = null, clearAchievementNotif = () => {},
+    setActiveLesson, setScreen
   } = store;
+
+  const startMastery = () => {
+    if (masteryPool.length === 0) return;
+    const masteryUnit = {
+      id: 'mastery',
+      title: 'අමාරු ප්‍රශ්න පුහුණුව',
+      icon: '🧠',
+      questions: masteryPool.slice(0, 10),
+      guidebook: {
+        text: 'මේ ඔයාට කලින් වැරදුණු ප්‍රශ්න. අපි මේවා ආයෙත් පුහුණු වෙලා දක්ෂයෙක් වෙමු!',
+        points: ['වැරදුණු තැන් හදාගමු', 'වැඩිපුර ලකුණු ලබාගමු', 'පද්මිනී ටීචර් ඔයාට උදව් කරයි']
+      }
+    };
+    setActiveLesson(masteryUnit);
+    setScreen('guide');
+  };
 
   const [showAchievements, setShowAchievements] = useState(false);
 

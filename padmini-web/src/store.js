@@ -28,6 +28,8 @@ export const usePadminiStore = create(
       achievements: [],
       newAchievementNotif: null,
       isAuthLoading: false,
+      activeLesson: null,
+      masteryPool: [], // අමාරු ප්‍රශ්න එකතුව
 
       // 🛡️ OWASP Secure Middleware: පරිශීලකයා Admin කෙනෙක්දැයි Backend සම්මතයෙන් පරීක්ෂා කිරීම (BAC / Role Enforcement)
       setAuthUser: async (user) => {
@@ -97,6 +99,7 @@ export const usePadminiStore = create(
       setGrade: (grade) => set({ userGrade: grade }),
       setAvatar: (id) => set({ avatarId: id }),
       setScreen: (screen) => set({ currentScreen: screen }),
+      setActiveLesson: (lesson) => set({ activeLesson: lesson }),
       addStudyTime: (seconds) => set((state) => ({ totalStudyTime: (state.totalStudyTime || 0) + seconds })),
 
       addXP: (amount) => set((state) => {
@@ -122,12 +125,24 @@ export const usePadminiStore = create(
       trackMistake: (themeTitle, qData) => set((state) => {
         const currentMistakes = state.mistakesByTheme || {};
         const currentMissed = state.missedQuestions || {};
-        const count = currentMistakes[themeTitle] || 0;
+        const qId = qData.id || Date.now();
+        const existingMissed = currentMissed[qId] || { data: qData, count: 0 };
+        
+        const newMissed = { 
+          ...currentMissed, 
+          [qId]: { ...existingMissed, count: (existingMissed.count || 0) + 1 } 
+        };
+
+        // වැරදුණු ප්‍රශ්න Pool එකට එක් කිරීම
+        const masteryPool = Object.values(newMissed)
+          .filter(item => item.count >= 1)
+          .map(item => item.data);
 
         return {
           hearts: Math.max(0, (state.hearts || 5) - 1),
-          mistakesByTheme: { ...currentMistakes, [themeTitle]: count + 1 },
-          missedQuestions: { ...currentMissed, [qData.id || Date.now()]: { data: qData, correctCount: 0 } }
+          mistakesByTheme: { ...currentMistakes, [themeTitle]: (currentMistakes[themeTitle] || 0) + 1 },
+          missedQuestions: newMissed,
+          masteryPool
         };
       }),
 
