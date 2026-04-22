@@ -4,98 +4,126 @@ import { Lock, Flame, Heart, CheckCircle2, Star, Award, X, Zap, BookOpen, Sparkl
 import { usePadminiStore } from '../store';
 
 // ── Lesson Card (Unique Card-Grid instead of Duolingo node-path) ──
-const LessonCard = ({ theme, index, isLocked, isCompleted, onClick }) => {
-  const iconBgs = [
-    'from-lotus-500 to-lotus-600',
-    'from-ocean-400 to-ocean-500',
-    'from-gold-400 to-gold-500',
-    'from-sunset-400 to-sunset-500',
-    'from-emerald-400 to-emerald-500',
-    'from-sky-400 to-sky-500',
-    'from-rose-400 to-rose-500',
-    'from-violet-400 to-violet-500',
-  ];
-<<<<<<< HEAD
+// ── Theme Configurations ──
+const UNIT_THEMES = {
+  1: { // Tea Garden / Nature
+    bgClass: 'bg-tea-garden',
+    orbClass: 'orb-emerald',
+    accentColor: 'emerald',
+    gradient: 'from-emerald-600 to-teal-500',
+    titleGradient: 'text-tea-gradient',
+    emoji: '🍃',
+    particle: '🌿'
+  },
+  2: { // Health
+    bgClass: 'bg-rose-50/30',
+    orbClass: 'orb-purple',
+    accentColor: 'lotus',
+    gradient: 'from-lotus-600 to-lotus-500',
+    titleGradient: 'text-lotus-700',
+    emoji: '🍎',
+    particle: '✨'
+  },
+  3: { // Universe
+    bgClass: 'bg-slate-50',
+    orbClass: 'orb-teal',
+    accentColor: 'ocean',
+    gradient: 'from-ocean-600 to-sky-500',
+    titleGradient: 'text-ocean-700',
+    emoji: '🌌',
+    particle: '⭐'
+  },
+  4: { // Heritage
+    bgClass: 'bg-amber-50/50',
+    orbClass: 'orb-gold',
+    accentColor: 'gold',
+    gradient: 'from-gold-600 to-orange-500',
+    titleGradient: 'text-gold-700',
+    emoji: '🏛️',
+    particle: '☸️'
+  }
+};
 
-  const avatarEmojis = { 
-    owl: '🦉', 
-    lion: '🦁', 
-    butterfly: '🦋', 
-    elephant: '🐘',
-    fairy: <img src="/images/padmini_fairy.png" className="w-full h-full object-contain" alt="Padmini" />
-  };
-  const margins = ["ml-0", "ml-24", "ml-40", "ml-20", "ml-0", "-ml-20", "-ml-40", "-ml-24"];
-=======
-  const bg = iconBgs[index % iconBgs.length];
->>>>>>> padmini-v5-complete
+const LessonCard = ({ theme, index, isLocked, isCompleted, onClick, unitTheme }) => {
+  const ut = unitTheme || UNIT_THEMES[1];
+  const margins = ["ml-0", "ml-12", "ml-24", "ml-12", "ml-0", "-ml-12", "-ml-24", "-ml-12"];
+  const currentMargin = margins[index % margins.length];
 
   return (
-    <motion.button
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06 }}
-      onClick={() => !isLocked && onClick(theme.id)}
-      disabled={isLocked}
-      className={`w-full text-left transition-all duration-300 active:scale-[0.97]
-        ${isLocked ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-card-hover'}`}
-    >
-      <div className={`solid-card p-4 flex items-center gap-4 ${isCompleted ? 'ring-2 ring-ocean-200 bg-ocean-50/30' : ''}`}>
-        {/* Icon Circle */}
-        <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-md
-          ${isLocked ? 'bg-slate-100' : `bg-gradient-to-br ${bg} text-white`}`}>
-          {isLocked ? <Lock size={22} className="text-slate-300" /> : (theme.icon || <BookOpen size={22} />)}
+    <div className={`flex flex-col items-center mb-10 ${currentMargin}`}>
+      <motion.button
+        whileHover={!isLocked ? { scale: 1.15 } : {}}
+        whileTap={!isLocked ? { scale: 0.9 } : {}}
+        onClick={() => !isLocked && onClick(theme.id)}
+        disabled={isLocked}
+        className={`relative z-10 
+          ${isLocked ? 'opacity-50 grayscale' : ''}
+          ${!isLocked && !isCompleted ? 'lotus-pulse' : ''}`}
+      >
+        {/* The Node Base (Lotus/Organic Shape) */}
+        <div className={`w-20 h-20 rounded-[2.5rem] flex items-center justify-center text-3xl shadow-xl transition-all duration-500
+          ${isLocked 
+            ? 'bg-white border-4 border-slate-100 text-slate-300' 
+            : isCompleted 
+              ? `bg-gradient-to-br ${ut.gradient} text-white ring-8 ring-${ut.accentColor}-100` 
+              : `bg-white border-4 border-${ut.accentColor}-400 text-${ut.accentColor}-600`}`}>
+          
+          {isLocked ? <Lock size={28} /> : (theme.icon || <BookOpen size={28} />)}
+          
+          {/* Status Overlay */}
           {isCompleted && (
-            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-ocean-500 flex items-center justify-center shadow-sm">
-              <CheckCircle2 size={14} className="text-white" />
+            <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center">
+              <CheckCircle2 size={16} className={`text-${ut.accentColor}-600`} />
             </div>
           )}
         </div>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-lotus-950 text-sm truncate leading-tight">{theme.title}</p>
-          <p className="text-[10px] font-medium text-lotus-400 mt-0.5">
-            {isCompleted ? '✓ සම්පූර්ණයි' : isLocked ? '🔒 අගුලු වී ඇත' : `ප්‍රශ්න ${theme.questions?.length || 0}ක්`}
-          </p>
-        </div>
-
-        {/* Status */}
-        {!isLocked && !isCompleted && (
-          <div className="shrink-0 w-9 h-9 rounded-xl bg-lotus-50 flex items-center justify-center">
-            <Zap size={18} className="text-lotus-500" />
-          </div>
+        {/* Floating Particle */}
+        {!isLocked && (
+          <motion.div 
+            animate={{ y: [0, -10, 0], opacity: [0.3, 0.8, 0.3] }}
+            transition={{ duration: 4, repeat: Infinity }}
+            className="absolute -right-4 -top-4 text-xl opacity-40">
+            {ut.particle}
+          </motion.div>
         )}
+      </motion.button>
+
+      {/* Label */}
+      <div className="mt-3 text-center max-w-[120px]">
+        <p className={`font-black text-xs leading-tight ${isLocked ? 'text-slate-400' : 'text-lotus-950'}`}>
+          {theme.title}
+        </p>
       </div>
-    </motion.button>
+    </div>
   );
 };
 
 // ── Unit Section ──
 const UnitSection = ({ unit, unitIndex, themes, completedLessonIds, lessons, onStartLesson }) => {
-  const unitColors = [
-    { gradient: 'from-lotus-600 to-lotus-500', accent: 'text-lotus-200', emoji: '🌿' },
-    { gradient: 'from-ocean-500 to-ocean-400', accent: 'text-ocean-200', emoji: '🌊' },
-    { gradient: 'from-gold-500 to-gold-400', accent: 'text-gold-200', emoji: '⭐' },
-    { gradient: 'from-sunset-500 to-sunset-400', accent: 'text-sunset-200', emoji: '🌅' },
-  ];
-  const uc = unitColors[unitIndex % unitColors.length];
+  const ut = UNIT_THEMES[unit.id] || UNIT_THEMES[1];
 
   return (
-    <div className="mb-8">
+    <div className={`mb-16 relative py-10 rounded-[3rem] overflow-hidden ${ut.bgClass} organic-shadow border border-white/50`}>
+      {/* Unit Floating Orbs */}
+      <div className={`absolute top-0 right-0 w-40 h-40 ${ut.orbClass} rounded-full blur-3xl opacity-50`} />
+      
       {/* Unit Header */}
-      <div className={`bg-gradient-to-r ${uc.gradient} p-5 rounded-4xl mb-4 relative overflow-hidden shadow-lg`}>
-        <div className="relative z-10 flex items-center gap-3">
-          <span className="text-3xl">{uc.emoji}</span>
-          <div>
-            <h2 className="text-lg font-black text-white leading-tight">{unit.title}</h2>
-            <p className={`text-[10px] font-semibold ${uc.accent} uppercase tracking-wider mt-0.5`}>{unit.description || `ඒකකය ${unitIndex + 1}`}</p>
-          </div>
-        </div>
-        <div className="absolute right-[-10px] bottom-[-10px] text-7xl opacity-10">{uc.emoji}</div>
+      <div className="relative z-10 px-8 mb-12 flex flex-col items-center text-center">
+        <motion.div 
+          initial={{ scale: 0 }} animate={{ scale: 1 }}
+          className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${ut.gradient} text-white flex items-center justify-center text-3xl shadow-lg mb-4`}>
+          {ut.emoji}
+        </motion.div>
+        <h2 className={`text-2xl font-black ${ut.titleGradient} leading-tight`}>{unit.title}</h2>
+        <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest">{unit.description}</p>
+        
+        {/* Decorative Path Line SVG (Simplified conceptual curve) */}
+        <div className="absolute top-40 bottom-0 left-1/2 -translate-x-1/2 border-l-4 border-dashed border-slate-200/50 -z-0 h-full w-px" />
       </div>
 
-      {/* Lesson Cards Grid */}
-      <div className="space-y-2.5">
+      {/* Lesson Nodes Path */}
+      <div className="relative z-10 flex flex-col items-center">
         {themes.map((theme, lIdx) => {
           const globalIdx = lessons.findIndex(l => l.id === theme.id);
           const isLocked = !completedLessonIds.includes(theme.id) && (unitIndex !== 0 || lIdx !== 0) &&
@@ -103,8 +131,15 @@ const UnitSection = ({ unit, unitIndex, themes, completedLessonIds, lessons, onS
           const isCompleted = completedLessonIds.includes(theme.id);
 
           return (
-            <LessonCard key={theme.id} theme={theme} index={lIdx} isLocked={isLocked}
-              isCompleted={isCompleted} onClick={onStartLesson} />
+            <LessonCard 
+              key={theme.id} 
+              theme={theme} 
+              index={lIdx} 
+              isLocked={isLocked}
+              isCompleted={isCompleted} 
+              onClick={onStartLesson}
+              unitTheme={ut}
+            />
           );
         })}
       </div>

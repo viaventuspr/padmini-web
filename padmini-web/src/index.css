@@ -81,6 +81,27 @@
   min-height: 100vh;
 }
 
+/* ── Tea Garden (Emerald) Theme ── */
+.bg-tea-garden {
+  background: linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%);
+}
+.text-tea-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-teal-600;
+}
+
+/* ── Organic Path Effects ── */
+.organic-shadow {
+  box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.2);
+}
+.lotus-pulse {
+  animation: lotusPulse 3s ease-in-out infinite;
+}
+
+@keyframes lotusPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(168, 85, 247, 0)); }
+  50% { transform: scale(1.05); filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.4)); }
+}
+
 /* ── Ambient Orb Backgrounds ── */
 .orb-purple {
   background: radial-gradient(circle, rgba(167, 139, 250, 0.15) 0%, transparent 70%);
@@ -92,5 +113,9 @@
 }
 .orb-teal {
   background: radial-gradient(circle, rgba(94, 234, 212, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.orb-emerald {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
   pointer-events: none;
 }

@@ -115,13 +115,16 @@ const AdminDashboard = ({ onBack }) => {
     return fullText;
   };
 
+  const [loadingStage, setLoadingStage] = useState("");
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setErrorInfo("");
     setIsProcessing(true);
-    setGeneratedQuestions([]); // Reset previous content
+    setGeneratedQuestions([]);
+    setLoadingStage("PDF ගොනුව කියවමින්... 📄");
 
     try {
       let questions = [];
@@ -131,29 +134,28 @@ const AdminDashboard = ({ onBack }) => {
         if (!text || text.trim().length < 20) {
           throw new Error("මෙම PDF එකෙන් අකුරු කියවිය නොහැක. මෙය පින්තූරයක් ලෙස ඇති PDF එකක් විය හැකියි.");
         }
+        setLoadingStage("පද්මිනී AI ප්‍රශ්න සකසමින්... 🧠✨");
         questions = await AiService.generateQuestionsFromText(text);
       } else if (file.type.startsWith("image/")) {
-        // ✨ Deep Fix: පින්තූරයක් (Photo) නම් Vision AI වෙත යැවීම
+        setLoadingStage("පින්තූරය විශ්ලේෂණය කරමින්... 🖼️");
         const reader = new FileReader();
-        const base64Promise = new Promise((resolve) => {
+        const base64 = await new Promise((resolve) => {
           reader.onload = () => resolve(reader.result.split(',')[1]);
           reader.readAsDataURL(file);
         });
-        const base64 = await base64Promise;
+        setLoadingStage("ප්‍රශ්න පත්‍රය සකසමින්... 📝");
         questions = await AiService.generateQuestionsFromImage(base64, file.type);
-      } else {
-        throw new Error("කරුණාකර PDF හෝ පින්තූරයක් (JPG/PNG) පමණක් තෝරන්න.");
       }
 
       if (!questions || questions.length === 0) {
-        throw new Error("මෙම පත්‍රිකාවෙන් ප්‍රශ්න සෑදීමට AI එකට නොහැකි විය. කරුණාකර වෙනත් එකක් උත්සාහ කරන්න.");
+        throw new Error("ප්‍රශ්න සෑදීමට AI එකට නොහැකි විය.");
       }
 
       const formatted = questions.map((q, idx) => ({
         id: Date.now() + idx,
         q: q.q || q.question || "ප්‍රශ්නයක් නැත",
         opts: q.opts || q.options || ["A", "B", "C", "D"],
-        ans: q.ans !== undefined ? q.ans : (q.correctAnswerIndex || 0),
+        ans: typeof q.ans === 'number' ? q.ans : 0,
         explain: q.explain || q.hint || "විස්තරයක් නැත",
         emoji: q.emoji || "🌿"
       }));
@@ -161,10 +163,10 @@ const AdminDashboard = ({ onBack }) => {
       setGeneratedQuestions(formatted);
       setLessonTitle(questions[0]?.topic || file.name.replace(".pdf", ""));
     } catch (error) {
-      console.error("Upload Error:", error);
       setErrorInfo(error.message);
     } finally {
       setIsProcessing(false);
+      setLoadingStage("");
     }
   };
 
@@ -264,8 +266,8 @@ const AdminDashboard = ({ onBack }) => {
                   {isProcessing ? <Loader2 className="animate-spin" size={48} /> : <Upload size={48} />}
                 </div>
                 <div>
-                    <h2 className="text-xl font-black text-slate-800">{isProcessing ? "ප්‍රශ්න සකසමින්..." : "PDF එකක් එක් කරන්න"}</h2>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">AI තාක්ෂණයෙන් තත්පර කීපයකින් පාඩම හැදේ</p>
+                    <h2 className="text-xl font-black text-slate-800">{isProcessing ? (loadingStage || "ප්‍රශ්න සකසමින්...") : "PDF එකක් එක් කරන්න"}</h2>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{isProcessing ? "කරුණාකර මොහොතක් රැඳී සිටින්න" : "AI තාක්ෂණයෙන් තත්පර කීපයකින් පාඩම හැදේ"}</p>
                 </div>
               </motion.div>
             ) : (

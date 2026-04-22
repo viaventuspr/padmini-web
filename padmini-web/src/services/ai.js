@@ -1,101 +1,91 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// පද්මිනී පරම AI සේවාව (Gemini 1.5 Flash - Speed Optimized)
+const cleanJsonResponse = (rawText) => {
+    if (!rawText) return [];
+    const cleaned = rawText.trim();
+    try {
+        const start = cleaned.indexOf('[');
+        const end = cleaned.lastIndexOf(']');
+        if (start !== -1 && end !== -1) {
+            return JSON.parse(cleaned.substring(start, end + 1));
+        }
+        return JSON.parse(cleaned);
+    } catch (e) {
+        console.error("JSON Clean Error:", e);
+        return [];
+    }
+};
+
 const AiService = {
   getAPIKey: () => {
-    return import.meta.env.VITE_GEMINI_API_KEY;
+    return import.meta.env.VITE_GEMINI_API_KEY || "";
   },
 
   generateQuestionsFromText: async (lessonText) => {
     const key = AiService.getAPIKey();
-    if (!key) throw new Error("Security Alert: AI Key එක සොයාගත නොහැක.");
+    if (!key || !lessonText) throw new Error("අවශ්‍ය දත්ත ලබා දීමට නොහැක.");
 
-    if (!lessonText || lessonText.trim().length < 10) {
-      throw new Error("PDF එකෙන් ප්‍රමාණවත් අකුරු ප්‍රමාණයක් කියවිය නොහැක.");
-    }
-
-    const tryGenerate = async (modelName, version = "v1beta") => {
-      // API Version එක වෙනස් කර බැලීම (v1 හෝ v1beta)
+    const tryGenerate = async (modelName, version) => {
       const genAI = new GoogleGenerativeAI(key);
       const model = genAI.getGenerativeModel({ 
         model: modelName,
-        generationConfig: { responseMimeType: "application/json", temperature: 0.2 }
+        generationConfig: { responseMimeType: "application/json", temperature: 0.1 } 
       }, { apiVersion: version });
 
-      const SYSTEM_PROMPT = `As Padmini Teacher, generate 5 MCQs from text in Sinhala.
-      Output ONLY JSON array. 
-      JSON Schema: [{"q": "ප්‍රශ්නය", "opts": ["A", "B", "C", "D"], "ans": 0, "explain": "විස්තරය", "emoji": "🌿", "topic": "මාතෘකාව"}]`;
-
-      const result = await model.generateContent(`${SYSTEM_PROMPT}\n\nText: ${lessonText.substring(0, 8000)}`);
-      const text = result.response.text();
-      return JSON.parse(text.trim());
+      const prompt = "As Padmini Teacher, analyze this text and generate 10 MCQs in Sinhala. Output ONLY JSON array. Schema: [{\"q\": \"question\", \"opts\": [\"a\",\"b\",\"c\",\"d\"], \"ans\": 0, \"explain\": \"hint\", \"emoji\": \"🌿\", \"topic\": \"title\"}]";
+      const finalInput = prompt + "\n\nContent: " + lessonText.substring(0, 15000);
+      
+      const result = await model.generateContent(finalInput);
+      const responseText = result.response.text();
+      return cleanJsonResponse(responseText);
     };
 
-    const modelsToTry = [
-      { name: "gemini-2.0-flash", ver: "v1beta" },
-      { name: "gemini-1.5-flash", ver: "v1" },
-      { name: "gemini-1.5-flash", ver: "v1beta" },
-      { name: "gemini-1.5-pro", ver: "v1" },
-      { name: "gemini-pro", ver: "v1beta" } // Old but stable
+    const models = [
+      { n: "gemini-2.0-flash", v: "v1beta" },
+      { n: "gemini-1.5-flash", v: "v1" }
     ];
 
-    for (const model of modelsToTry) {
+    for (const m of models) {
       try {
-        console.log(`Padmini AI: Attempting ${model.name} (${model.ver})...`);
-        return await tryGenerate(model.name, model.ver);
+        return await tryGenerate(m.n, m.v);
       } catch (err) {
-        if (err.status === 429) {
-          console.warn(`Quota hit for ${model.name}. Waiting 2s before next model...`);
-          await new Promise(r => setTimeout(r, 2000)); // 429 ආවොත් පොඩ්ඩක් ඉවසමු
-        } else {
-          console.warn(`${model.name} failed with status ${err.status}. Trying next...`);
-        }
+        console.warn("Model failed:", m.n);
       }
     }
-
-    throw new Error("පද්මිනී AI සේවාවට දැන් ගොඩක් අය සම්බන්ධ වෙලා ඉන්නවා (Quota Exceeded). කරුණාකර විනාඩි 1ක් රැඳී නැවත උත්සාහ කරන්න.");
+    throw new Error("AI පද්ධතියේ දෝෂයකි.");
   },
 
-  // ✨ Deep Fix: Image (Vision) Support
-  // WhatsApp මගින් ලැබෙන පින්තූර කෙලින්ම ප්‍රශ්න පත්‍ර බවට පත් කිරීම
   generateQuestionsFromImage: async (base64Data, mimeType) => {
     const key = AiService.getAPIKey();
-    if (!key) throw new Error("Security Alert: AI Key එක සොයාගත නොහැක.");
+    if (!key) throw new Error("Key missing");
 
     try {
       const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Vision සඳහා 1.5 Flash ඉතා ස්ථාවරයි
-
-      const prompt = `As Padmini Teacher, analyze this school paper image and generate 5 MCQs in Sinhala.
-      Output ONLY JSON array. 
-      JSON Schema: [{"q": "ප්‍රශ්නය", "opts": ["A", "B", "C", "D"], "ans": 0, "explain": "විස්තරය", "emoji": "🌿", "topic": "මාතෘකාව"}]`;
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const prompt = "As Padmini Teacher, analyze this image and generate 10 MCQs in Sinhala. Output ONLY JSON array.";
 
       const result = await model.generateContent([
-        prompt,
-        { inlineData: { data: base64Data, mimeType } }
+        { inlineData: { data: base64Data, mimeType: mimeType } },
+        prompt
       ]);
-
-      const text = result.response.text();
-      return JSON.parse(text.trim());
+      const responseText = result.response.text();
+      return cleanJsonResponse(responseText);
     } catch (error) {
-       console.error("Vision AI Error:", error);
-       if (error.status === 429) throw new Error("පද්ධතිය කාර්යබහුලයි. කරුණාකර විනාඩියකින් නැවත උත්සාහ කරන්න.");
-       throw new Error("පින්තූරය කියවීමට AI එකට නොහැකි විය. කරුණාකර පින්තූරය වඩාත් පැහැදිලිව ගෙන නැවත ලබා දෙන්න.");
+       throw new Error("පින්තූරය කියවීමට නොහැක.");
     }
   },
 
   explainToChild: async (question, correctAnswer) => {
     const key = AiService.getAPIKey();
     if (!key) return "නිවැරදි පිළිතුර: " + correctAnswer;
-
     try {
       const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-      const prompt = `Padmini Teacher, explain in 1 simple Sinhala sentence why "${correctAnswer}" is correct for "${question}". Be kind.`;
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const prompt = "Padmini Teacher, explain in 1 simple Sinhala sentence why " + correctAnswer + " is correct for " + question;
       const result = await model.generateContent(prompt);
       return result.response.text();
     } catch (e) {
-      return `හරිම ලස්සනයි! නිවැරදි පිළිතුර වෙන්නේ ${correctAnswer}.`;
+      return "නිවැරදි පිළිතුර: " + correctAnswer;
     }
   }
 };
